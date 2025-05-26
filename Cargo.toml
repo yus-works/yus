@@ -1,0 +1,10 @@
+[package]
+name = "yus"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+leptos = { version = "0.8.2", features = ["csr"] }
+
+[build]
+target = "wasm32-unknown-unknown"
