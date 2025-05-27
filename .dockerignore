@@ -1,0 +1,460 @@
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/.*.swp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/doc
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/tags
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/examples/ss10pusa.csv
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/build
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/scratch*
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/bench_large/huge
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/**/BREADCRUMBS
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/tmp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aho-corasick-1.1.3/aho-corasick-debug/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anyhow-1.0.98/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anyhow-1.0.98/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anyhow-1.0.98/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/async-trait-0.1.88/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/async-trait-0.1.88/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/async-trait-0.1.88/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.4.0/.gitignore
+
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.4.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.4.0/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.4.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/*~
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/*.swp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/*.swo
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/main.rs
+
+# JetBrains tools
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/.idea
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/**/*.iml
+
+# `perf record` files
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/*perf.data*
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/base64-0.22.1/tmp
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.9.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.9.1/**/wip
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.9.1/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.9.1/**/Cargo.lock
+
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.9.1/.idea
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bumpalo-3.17.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bumpalo-3.17.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bumpalo-3.17.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bytes-1.10.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bytes-1.10.1/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bytes-1.10.1/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/camino-1.1.9/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/camino-1.1.9/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/camino-1.1.9/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cfg-if-1.0.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cfg-if-1.0.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cfg-if-1.0.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.idea/.gitignore
+# Default ignored files
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.idea/shelf
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.idea/workspace.xml
+# Editor-based HTTP Client requests
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.idea/httpRequests
+# Datasource local storage ignored files
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.idea/dataSources
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/codee-0.3.0/.idea/dataSources.local.xml
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/collection_literals-1.0.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/collection_literals-1.0.1/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/collection_literals-1.0.1/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/ccase/test/tmp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/**/cobertura.xml
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/ccase/test/tmp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/**/cobertura.xml
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/result
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/**/.vscode
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.8.0/**/.direnv
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dashmap-6.1.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dashmap-6.1.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dashmap-6.1.0/**/**/*.rs.bk
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/displaydoc-0.2.5/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/displaydoc-0.2.5/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/displaydoc-0.2.5/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/displaydoc-0.2.5/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drain_filter_polyfill-0.1.3/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drain_filter_polyfill-0.1.3/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drain_filter_polyfill-0.1.3/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/either-1.15.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/either-1.15.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/either-1.15.0/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/equivalent-1.0.2/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/equivalent-1.0.2/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/equivalent-1.0.2/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/erased-0.1.2/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/erased-0.1.2/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/erased-0.1.2/**/.idea
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/erased-0.1.2/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fnv-1.0.7/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fnv-1.0.7/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fnv-1.0.7/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/.gitignore
+# Compiled files
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/**/*.o
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/**/*.so
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/**/*.rlib
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/**/*.dll
+
+# Executables
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/**/*.exe
+
+# Generated by Cargo
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/guardian-1.3.0/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.14.5/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.14.5/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.14.5/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.14.5/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.15.3/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.15.3/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.15.3/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hashbrown-0.15.3/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-1.3.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-1.3.1/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-1.3.1/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna_adapter-1.2.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna_adapter-1.2.1/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/indexmap-2.9.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/indexmap-2.9.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/indexmap-2.9.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itertools-0.14.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itertools-0.14.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itertools-0.14.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itoa-1.0.15/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itoa-1.0.15/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/itoa-1.0.15/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/leptos_macro-0.8.2/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/leptos_macro-0.8.2/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/leptos_macro-0.8.2/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.172/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.172/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.172/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.172/**/*~
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linear-map-1.2.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linear-map-1.2.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/linear-map-1.2.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.27/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.27/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.27/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.27/**/.idea
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/manyhow-0.11.4/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/manyhow-0.11.4/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/manyhow-0.11.4/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/.*.swp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/doc
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/tags
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/examples/ss10pusa.csv
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/build
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/scratch*
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/bench_large/huge
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memchr-2.7.4/**/tmp
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_cpus-1.16.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_cpus-1.16.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_cpus-1.16.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.3/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.3/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.3/.vscode
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/once_cell-1.21.3/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parking_lot-0.12.3/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parking_lot-0.12.3/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parking_lot-0.12.3/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/paste-1.0.15/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/paste-1.0.15/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/paste-1.0.15/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/paste-1.0.15/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pathdiff-0.2.3/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pathdiff-0.2.3/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pathdiff-0.2.3/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pathdiff-0.2.3/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-utils-0.1.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-utils-0.1.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-utils-0.1.0/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-utils-0.1.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/prettyplease-0.2.32/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/prettyplease-0.2.32/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/prettyplease-0.2.32/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error-attr2-2.0.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error-attr2-2.0.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error-attr2-2.0.0/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error-attr2-2.0.0/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error-attr2-2.0.0/**/.fuse_hidden*
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error2-2.0.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error2-2.0.1/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error2-2.0.1/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error2-2.0.1/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-error2-2.0.1/**/.fuse_hidden*
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.95/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.95/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-1.0.95/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-diagnostics-0.10.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-diagnostics-0.10.1/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-diagnostics-0.10.1/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro2-diagnostics-0.10.1/**/wip
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-1.0.40/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-1.0.40/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-1.0.40/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/r-efi-5.2.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/r-efi-5.2.0/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/r-efi-5.2.0/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/redox_syscall-0.5.12/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/redox_syscall-0.5.12/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/redox_syscall-0.5.12/**/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/bench-log
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/.*.swp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/wiki
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/tags
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/examples/debug.rs
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/**/tmp
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/record/old-bench-log/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/regex-1.11.1/record/old-bench-log/**/tmp
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc-hash-2.1.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc-hash-2.1.1/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc-hash-2.1.1/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc-hash-2.1.1/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc_version-0.4.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc_version-0.4.1/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc_version-0.4.1/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustc_version-0.4.1/**/.DS_Store
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustversion-1.0.21/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustversion-1.0.21/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustversion-1.0.21/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ryu-1.0.20/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ryu-1.0.20/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ryu-1.0.20/upstream
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ryu-1.0.20/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/.*.swp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/doc
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/tags
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/examples/ss10pusa.csv
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/build
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/scratch*
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/bench_large/huge
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/same-file-1.0.6/**/x
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/scopeguard-1.2.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/scopeguard-1.2.0/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/scopeguard-1.2.0/**/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/semver-1.0.26/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/semver-1.0.26/node_modules
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/semver-1.0.26/package-lock.json
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/semver-1.0.26/package.json
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/semver-1.0.26/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/semver-1.0.26/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/send_wrapper-0.6.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/send_wrapper-0.6.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/send_wrapper-0.6.0/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/send_wrapper-0.6.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.140/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.140/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.140/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_qs-0.14.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_qs-0.14.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_qs-0.14.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/slotmap-1.0.7/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/slotmap-1.0.7/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/slotmap-1.0.7/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/slotmap-1.0.7/**/.vscode
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/slotmap-1.0.7/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/slotmap-1.0.7/**/tags
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.0/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.0/fuzz/hfuzz_target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smallvec-1.15.0/.vscode
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stable_deref_trait-1.2.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stable_deref_trait-1.2.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stable_deref_trait-1.2.0/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/syn_derive-0.2.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/syn_derive-0.2.0/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-1.0.69/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-1.0.69/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-1.0.69/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-1.0.69/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.12/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.12/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.12/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/.gitignore
+# Generated by Cargo
+# will have compiled files and executables
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/target
+
+# Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
+# More information here http://doc.crates.io/guide.html#cargotoml-vs-cargolock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/**/Cargo.lock
+
+# These are backup files generated by rustfmt
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/**/Cargo.lock
+
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/typed-builder-0.21.0/typed-builder-macro/target
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/UCD
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/UCD.zip
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/tests/fst/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-ident-1.0.18/tests/fst/prop_list.rs
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.12.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.12.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.12.0/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.12.0/**/scripts/tmp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.12.0/**/*.pyc
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-segmentation-1.12.0/**/*.txt
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-xid-0.2.6/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-xid-0.2.6/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-xid-0.2.6/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/unicode-xid-0.2.6/**/scripts/tmp
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/utf8_iter-1.0.4/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/utf8_iter-1.0.4/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/utf8_iter-1.0.4/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/version_check-0.9.5/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/version_check-0.9.5/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/version_check-0.9.5/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/.*.swp
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/doc
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/tags
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/examples/ss10pusa.csv
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/build
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/scratch*
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/bench_large/huge
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/walkdir-2.5.0/**/tmp
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.11.0+wasi-snapshot-preview1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.11.0+wasi-snapshot-preview1/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.11.0+wasi-snapshot-preview1/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.11.0+wasi-snapshot-preview1/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.14.2+wasi-0.2.4/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.14.2+wasi-0.2.4/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.14.2+wasi-0.2.4/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasi-0.14.2+wasi-0.2.4/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasm-streams-0.4.2/.gitignore
+# IntelliJ
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasm-streams-0.4.2/.idea
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasm-streams-0.4.2/**/*.iml
+
+# Rust
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasm-streams-0.4.2/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasm-streams-0.4.2/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasm-streams-0.4.2/**/Cargo.lock
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/winapi-util-0.1.9/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/winapi-util-0.1.9/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/winapi-util-0.1.9/**/**/*.rs.bk
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/winapi-util-0.1.9/**/Cargo.lock
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/winapi-util-0.1.9/**/tags
+
+# flyctl launch added from .cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yansi-1.0.1/.gitignore
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yansi-1.0.1/target
+.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/yansi-1.0.1/**/Cargo.lock
+
+# flyctl launch added from .gitignore
+target
+**/.rustup
+**/.cargo
+**/dist
+fly.toml
