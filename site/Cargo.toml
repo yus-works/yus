@@ -1,0 +1,15 @@
+[package]
+name    = "site"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+leptos        = { workspace = true, features = ["ssr"] }
+leptos_actix  = { workspace = true }
+actix-files   = { workspace = true }
+ui            = { path = "../ui" }
+actix-web     = "4.11"
+env_logger    = { workspace = true }
+log           = { workspace = true }
+anyhow        = { workspace = true }
+

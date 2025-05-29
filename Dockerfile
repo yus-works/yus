@@ -1,27 +1,29 @@
-# Stage 1: Build app
-FROM rust:1.85 AS builder
-
-# Install the WASM target and Trunk
-RUN rustup target add wasm32-unknown-unknown \
-    && cargo install trunk --locked
-
+####################  Stage 1 – build UI  ####################
+FROM rust:1.85 AS build-ui
+RUN rustup target add wasm32-unknown-unknown && \
+    cargo install trunk --locked
 WORKDIR /app
-
+COPY ui ./ui
 COPY Cargo.toml Cargo.lock ./
-COPY Trunk.toml index.html ./
-COPY src ./src
 
-RUN trunk build --release
+COPY site/Cargo.toml ./site/
+RUN trunk build --release \
+        --public-url /pkg \
+        --dist ./target/site
 
-# Stage 2: Serve with nginx
-FROM nginx:alpine
+####################  Stage 2 – build server  #################
+FROM rust:1.85 AS build-site
+WORKDIR /app
+COPY . .
+RUN cargo build -p site --release
 
-# Clean default nginx content
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copy the static site from the build stage
-COPY --from=builder /app/dist/ /usr/share/nginx/html/
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+####################  Stage 3 – final image  ##################
+FROM debian:bookworm-slim
+WORKDIR /app
+# copy server binary
+COPY --from=build-site /app/target/release/site ./site
+# copy static assets folder produced by trunk
+COPY --from=build-ui   /app/target/site ./target/site
+ENV LEPTOS_SITE_ROOT=/app/target/site
+EXPOSE 3000
+CMD ["./site"]
