@@ -8,7 +8,7 @@ use leptos::IntoView;
 use leptos::component;
 
 use crate::pages::{
-  demos_menu::DemosMenu, home::Home
+  demos_menu::DemosMenu, home::Home, demos::cube::CubeDemo
 };
 
 #[component]
@@ -18,7 +18,7 @@ pub fn RoutesMenu() -> impl IntoView {
         <Route path=path!("")                view=Home        />
         <Route path=path!("/demos")          view=DemosMenu       />
         // <Route path=path!("/demos/mandelbrot") view=Mandelbrot/>
-        // <Route path=path!("/demos/cube")     view=Cube        />
+        <Route path=path!("/demos/cube")     view=CubeDemo        />
       </Routes>
     }
 }
