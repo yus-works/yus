@@ -76,11 +76,11 @@ pub struct GpuState {
     instance_buffer: wgpu::Buffer,
     instance_count: u32,
 
-    start_time: f64,
+    pub start_time: f64,
 
-    camera: Camera,
-    dragging: bool,
-    last_mouse_pos: (f32, f32),
+    pub camera: Camera,
+    pub dragging: bool,
+    pub last_mouse_pos: (f32, f32),
 
     depth_view: wgpu::TextureView,
 }
