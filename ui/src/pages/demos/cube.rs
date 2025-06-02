@@ -112,8 +112,8 @@ pub fn CubeDemo() -> impl IntoView {
                         st.last_mouse_pos = (mx, my);
 
                         // update camera angles
-                        st.camera.yaw -= dx * 0.005;
-                        st.camera.pitch -= dy * 0.005;
+                        st.camera.yaw += dx * 0.005;
+                        st.camera.pitch += dy * 0.005;
 
                         // clamp pitch so we don’t flip upside‐down:
                         let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
