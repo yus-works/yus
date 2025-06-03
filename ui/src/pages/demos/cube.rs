@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use leptos::attr::HttpEquiv;
 use leptos::prelude::Effect;
 use leptos::prelude::StyleAttribute;
 use leptos::view;
