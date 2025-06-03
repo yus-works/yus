@@ -9,8 +9,8 @@ pub fn Home() -> impl IntoView {
     view! {
       <h1 class="text-3xl font-bold mb-4 text-neutral-light">"Hello!!!!!!!!!"</h1>
 
-      <div class="h-full flex items-center justify-center bg-neutral-light text-slate-900">
-        <div class="mx-4 p-10 border rounded-2xl shadow-sm max-w-lg w-full">
+      <div class="h-full flex items-center justify-center bg-neutral-dark text-slate-900">
+        <div class="mx-4 p-10 border rounded-2xl shadow-sm bg-neutral-light max-w-lg w-full">
           <div class="flex items-center gap-2 mb-6">
             <img src="/assets/favicon-negative.png" alt="Yus logo" class="h-8"/>
           </div>
@@ -18,7 +18,7 @@ pub fn Home() -> impl IntoView {
           <p class="mb-6 text-lg">Choose your path:</p>
 
           <div class="flex gap-3">
-            <a href="/hacker" class="px-6 py-3 rounded-full bg-teal-500 hover:bg-teal-600 text-white font-medium">Enter Hacker Mode</a>
+            <a href="/hacker" class="px-6 py-3 rounded-full bg-primary hover:bg-teal-600 text-white font-medium">Enter Hacker Mode</a>
             <a href="/classic" class="px-6 py-3 rounded-full border border-slate-300 hover:bg-slate-50">Skip to Classic Site</a>
           </div>
 
