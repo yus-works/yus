@@ -8,9 +8,14 @@ use leptos::IntoView;
 use leptos::component;
 
 use crate::pages::{
-  demos_menu::DemosMenu, home::Home, demos::cube::CubeDemo
+  demos_menu::DemosMenu, home::Home
 };
 
+
+#[cfg(all(feature = "web", target_arch = "wasm32"))]
+use crate::pages::demos::cube::CubeDemo;
+
+#[cfg(all(feature = "web", target_arch = "wasm32"))]
 #[component]
 pub fn RoutesMenu() -> impl IntoView {
     view! {
@@ -19,6 +24,17 @@ pub fn RoutesMenu() -> impl IntoView {
         <Route path=path!("/demos")          view=DemosMenu       />
         // <Route path=path!("/demos/mandelbrot") view=Mandelbrot/>
         <Route path=path!("/demos/cube")     view=CubeDemo        />
+      </Routes>
+    }
+}
+
+#[cfg(not(all(feature = "web", target_arch = "wasm32")))]
+#[component]
+pub fn RoutesMenu() -> impl IntoView {
+    view! {
+      <Routes fallback=|| view! { <p>"404 – not found"</p> }>
+        <Route path=path!("")                view=Home        />
+        <Route path=path!("/demos")          view=DemosMenu       />
       </Routes>
     }
 }

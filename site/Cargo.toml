@@ -7,7 +7,6 @@ edition = "2024"
 leptos        = { workspace = true, features = ["ssr"] }
 leptos_actix  = { workspace = true }
 actix-files   = { workspace = true }
-ui            = { path = "../ui" }
 actix-web     = "4.11"
 env_logger    = { workspace = true }
 log           = { workspace = true }

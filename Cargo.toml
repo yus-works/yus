@@ -3,7 +3,7 @@ resolver = "2"
 members   = ["site", "ui"]
 
 [workspace.dependencies]
-leptos         = { version = "0.8.2", default-features = false, features = ["csr","ssr"] }
+leptos         = { version = "0.8.2", features = ["csr","ssr"] }
 leptos_router  = "0.8.2"
 leptos_meta    = "0.8.2"
 leptos_actix   = "0.8.2"
@@ -21,3 +21,20 @@ image          = "0.25.6"
 wasm-bindgen-futures = "0.4.50"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 web-sys        = { version = "0.3.77", features = [ "Window", "Performance" ]}
+
+
+[[workspace.metadata.leptos]]
+name        = "yus"
+bin-package = "site"
+lib-package = "ui"
+
+# ---- only change these two lines ↓ -------------------------
+# Let cargo-leptos place the static site in target/site
+site-root   = "target/site"      # default is already target/site
+site-pkg-dir = "pkg"             # keep default; will be target/site/pkg
+# ------------------------------------------------------------
+
+# everything else can stay
+output-name  = "ui"
+lib-features = ["web"]
+bin-features = ["ssr"]

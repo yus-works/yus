@@ -10,8 +10,8 @@ crate-type = ["cdylib", "rlib"]
 leptos                       = { workspace = true, features = ["csr","ssr"] }
 leptos_router                = { workspace = true }
 leptos_meta                  = { workspace = true }
-wgpu                         = { workspace = true, features = ["webgpu"] }
-wasm-bindgen                 = { workspace = true }
+wgpu                         = { workspace = true, features = ["webgpu"], optional = true }
+wasm-bindgen                 = { workspace = true, optional = true }
 console_error_panic_hook     = { workspace = true }
 pollster                     = { workspace = true }
 anyhow                       = { workspace = true }
@@ -19,5 +19,16 @@ glam                         = { workspace = true }
 bytemuck                     = { workspace = true }
 image                        = { workspace = true }
 wasm-bindgen-futures         = { workspace = true }
-gloo-timers                  = { workspace = true , features = ["futures"] }
-web-sys                      = { workspace = true , features = [ "Window", "Performance" ]}
+gloo-timers                  = { workspace = true , features = ["futures"], optional = true }
+web-sys                      = { workspace = true , features = [ "Window", "Performance" ], optional = true }
+
+
+[features]
+web = [
+  "dep:wgpu",
+  "dep:wasm-bindgen",
+  "dep:web-sys",
+  "dep:gloo-timers",
+]
+
+default = ["web"]           # so plain `cargo test` or `cargo build` works
