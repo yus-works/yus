@@ -12,7 +12,7 @@ pub fn Home() -> impl IntoView {
       <div class="h-full flex items-center justify-center bg-neutral-light text-slate-900">
         <div class="mx-4 p-10 border rounded-2xl shadow-sm max-w-lg w-full">
           <div class="flex items-center gap-2 mb-6">
-            <img src="/assets/favicon.png" alt="Yus logo" class="h-8"/>
+            <img src="/assets/favicon-negative.png" alt="Yus logo" class="h-8"/>
           </div>
           <h1 class="text-4xl font-bold mb-2">Yus Playground</h1>
           <p class="mb-6 text-lg">Choose your path:</p>
