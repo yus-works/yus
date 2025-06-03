@@ -1,5 +1,5 @@
 {
-  description = "Dev shell for Trunk with LLD and WASM targets";
+  description = "Dev shell for Trunk + Tailwind + LLD + WASM targets";
 
   inputs = {
     nixpkgs.url     = "github:NixOS/nixpkgs/nixos-25.05";
@@ -10,23 +10,37 @@
     flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs { inherit system; };
+      nodePackages = pkgs.nodePackages;
     in {
       devShells.default = pkgs.mkShell {
         buildInputs = [
-          pkgs.rustup             # Rustup for managing targets
-          pkgs.cargo              # Cargo build tool
-          pkgs.wasm-bindgen-cli   # For WASM bindings
-          pkgs.wasm-pack          # Optional WASM helper
-          pkgs.binaryen           # WASM optimizer (optional)
-          pkgs.lld                # LLVM linker (provides rust-lld)
-          pkgs.trunk-ng           # Trunk dev server & asset pipeline
+          # ─────────────────────────────────────────────
+          # Rust + WASM toolchain
+          pkgs.rustup
+          pkgs.cargo
+          pkgs.wasm-bindgen-cli
+          pkgs.wasm-pack
+          pkgs.binaryen
+          pkgs.lld
+          pkgs.trunk-ng
+
+          # ─────────────────────────────────────────────
+          # Node.js + TailwindCSS/PostCSS
+          # (so that `tailwindcss` CLI, `postcss` and `autoprefixer` are in $PATH)
+
+          pkgs.nodejs            # pulls in a recent Node 18.x
+          nodePackages.tailwindcss
+          nodePackages.postcss
+          nodePackages.autoprefixer
         ];
 
         shellHook = ''
-          # Ensure the WASM target is installed
-          rustup target add wasm32-unknown-unknown
+          # Make sure the WASM target is installed
+          rustup target add wasm32-unknown-unknown >/dev/null 2>&1 || true
 
-          echo "🔧 Ready for 'trunk serve' on ${system} (http://127.0.0.1:8080)"
+          echo "⚙️  Entered dev shell on ${system}"
+          echo "    • Run `trunk serve` to build Rust → WASM + TailwindCSS"
+          echo "    • You can now run: `tailwindcss init` or `tailwindcss --help`"
         '';
       };
     });

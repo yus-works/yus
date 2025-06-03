@@ -7,6 +7,6 @@ use leptos::view;
 #[component]
 pub fn Home() -> impl IntoView {
     view! {
-      <h1 class="text-3xl font-bold mb-4">"Hello!!!!!!!!!"</h1>
+      <h1 class="text-3xl font-bold mb-4 text-neutral-dark">"Hello!!!!!!!!!"</h1>
     }
 }
