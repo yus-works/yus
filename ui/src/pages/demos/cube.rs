@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use leptos::prelude::ElementChild;
 use std::rc::Rc;
 
 use leptos::prelude::Effect;
@@ -219,12 +220,22 @@ pub fn CubeDemo() -> impl IntoView {
 
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.
     view! {
-        <canvas
+        <div class="relative w-full group">
+          <canvas
             id=canvas_id
-            width=800
-            height=600
-            class="border w-full h-[500px]"
-            style="border: 1px solid red;"
-        ></canvas>
+            width="800"
+            height="600"
+            class="w-full"
+          ></canvas>
+
+          <div id="hint"
+               class="absolute inset-0 flex flex-col items-center justify-center
+                      bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
+                      pointer-events-none transition-opacity duration-500
+                      group-hover:opacity-0">
+            "✋"
+            <p>"Click & drag – scroll to zoom"</p>
+          </div>
+        </div>
     }
 }

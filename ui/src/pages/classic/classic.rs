@@ -1,12 +1,14 @@
 use leptos::prelude::ElementChild;
+use leptos::prelude::GlobalAttributes;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::view;
 use leptos::{IntoView, component};
 
+use crate::pages::demos::cube::CubeDemo;
+
 #[component]
 pub fn classic_main() -> impl IntoView {
     view! {
-
       <main class="max-w-6xl mx-auto px-6">
         // Hero
         <section class="py-24">
@@ -15,52 +17,83 @@ pub fn classic_main() -> impl IntoView {
           </h1>
           <p class="font-sans text-xl mb-10 max-w-xl text-text">
           "
-            Rockets in Minecraft, motion rigs for wannabe rally drivers,
-            and (coming soon) a real-life CS:GO airsoft map. Pick one ↓
+            Rockets in Minecraft, satellites on your phone,
+            and (coming soon) real life simulation experiences.
           "
+            <br/>
+          " Pick one ↓ "
           </p>
           <a href="#projects"
-             class="inline-block bg-primary text-text px-8 py-4 rounded-full
+             class="inline-block bg-primary text-neutral-dark px-8 py-4 rounded-full
                     hover:bg-primary transition">View Projects</a>
         </section>
 
         // Project cards
         <section id="projects" class="py-16 grid sm:grid-cols-3 gap-8">
           // repeat card -->
-          <article class="bg-white rounded-xl overflow-hidden shadow">
+          <article class="bg-neutral-light rounded-xl overflow-hidden shadow">
             <img src="/img/rocket.jpg" alt="" class="h-40 w-full object-cover"/>
             <div class="p-4">
-              <h3 class="font-semibold text-lg mb-1">Minecraft Rocket Mod</h3>
-              <p class="text-sm text-slate-700">GPL-3.0, Kerbal-style physics.</p>
+              <h3 class="font-semibold text-lg mb-1">Velari</h3>
+              <p class="text-sm text-slate-700">Minecraft Space Travel Mod<br/>GPL-3.0</p>
             </div>
           </article>
-          <article class="bg-white rounded-xl overflow-hidden shadow">
+          <article class="bg-neutral-light rounded-xl overflow-hidden shadow">
             <img src="/img/rocket.jpg" alt="" class="h-40 w-full object-cover"/>
             <div class="p-4">
-              <h3 class="font-semibold text-lg mb-1">Minecraft Rocket Mod</h3>
-              <p class="text-sm text-slate-700">GPL-3.0, Kerbal-style physics.</p>
+              <h3 class="font-semibold text-lg mb-1">Metal Stars</h3>
+              <p class="text-sm text-slate-700">AR Satellite Visualizer<br/>GPL-3.0</p>
             </div>
           </article>
-          <article class="bg-white rounded-xl overflow-hidden shadow">
+          <article class="bg-neutral-light rounded-xl overflow-hidden shadow">
             <img src="/img/rocket.jpg" alt="" class="h-40 w-full object-cover"/>
             <div class="p-4">
-              <h3 class="font-semibold text-lg mb-1">Minecraft Rocket Mod</h3>
-              <p class="text-sm text-slate-700">GPL-3.0, Kerbal-style physics.</p>
+              <h3 class="font-semibold text-lg mb-1">Yus Experiments</h3>
+              <p class="text-sm text-slate-700">Experiments that test my abilities</p>
             </div>
           </article>
-          // ... -->
         </section>
 
-        <section class="py-20">
-          <h2 class="text-3xl font-bold mb-8">WebGPU demo</h2>
+        <section id="experiments" class="py-8">
+          <h2 class="text-3xl font-bold text-text">Yus Experiments</h2>
+
+          <p class="text-text leading-relaxed">
+            "Needed a cube-planet visualiser for my Minecraft space-mod "
+            <a href="/velari" class="underline hover:text-[#E55934]">Velari</a>". "
+            "I picked up "<strong>wgpu</strong>", liked it too much, and ported the toy to WebGPU."<br/>
+            <strong>"Now poke the prototype below 👇"</strong>
+          </p>
+        </section>
+
+        <section id="shader-lab" class="py-20">
+          <h2 class="text-3xl text-text font-bold mb-2">Shader Playground</h2>
+          <p class="mb-6 text-text">
+            Tweak any preset or pick another demo below.
+          </p>
+
+          <ul id="demo-tabs" class="flex gap-4 mb-4 border-b text-text">
+            <li><button data-demo="orbit"  class="tab active">Orbit Path</button></li>
+            <li><button data-demo="plasma" class="tab">Plasma Exhaust</button></li>
+            <li><button data-demo="noise"  class="tab">Wobbly Planet</button></li>
+          </ul>
+
           <div class="grid md:grid-cols-2 gap-6">
-            <textarea id="shader" class="w-full h-72 bg-surface text-text p-4 font-mono
+            <textarea id="shader" class="w-full h-128 bg-surface text-text p-4 font-mono
                                          rounded-xl resize-none"></textarea>
-            <canvas id="wgpu" class="w-full h-72 rounded-xl border"></canvas>
+
+            <div class="w-full h-128 rounded-xl border overflow-hidden flex items-center justify-center">
+              <CubeDemo />
+            </div>
           </div>
+
+          <p class="mt-4 text-sm text-text">
+            More doodles live at <a href="/projects/experiments" class="underline">experiments</a>.
+          </p>
+        </section>
+
+        <section class="py-8">
+          <h2 class="text-3xl font-bold text-text mb-8">WebGPU demo</h2>
         </section>
       </main>
-
-      <script type="module" src="/js/demo.js"></script>
     }
 }
