@@ -229,9 +229,10 @@ pub fn CubeDemo() -> impl IntoView {
           ></canvas>
 
           <div id="hint"
+               onmouseleave="this.remove()"
                class="absolute inset-0 flex flex-col items-center justify-center
                       bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
-                      pointer-events-none transition-opacity duration-500
+                      transition-opacity duration-500
                       group-hover:opacity-0">
             "✋"
             <p>"Click & drag – scroll to zoom"</p>
