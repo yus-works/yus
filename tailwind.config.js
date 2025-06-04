@@ -1,4 +1,5 @@
-/** @type {import('tailwindcss').Config} */
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 module.exports = {
   content: [
     "./ui/src/**/*.rs",
@@ -6,17 +7,23 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ['"Oxanium"', ...defaultTheme.fontFamily.sans],
+        sans: ['"Sora"', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
-        primary: "#0A6460",
+        background: "#210F37",
+        surface: "#121829",
+        primary: "#00FFC3",
         accent:  "#E55934",
-        neutral: {
-          light: "#F2EFE9",
-          dark: "#1D1128",
+        text: {
+          DEFAULT: "#E4E4E4",
+          muted: "#9CA3AF",
         },
-        shadow: {
-          light: "#D9DBE1",
-          dark: "#9EA2B0",
-        }
+        neutral: {
+          dark: "#1A1423",
+          light: "#E4E0E7",
+        },
       },
     },
   },

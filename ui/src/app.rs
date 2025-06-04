@@ -15,17 +15,29 @@ pub fn App() -> impl IntoView {
     view! {
       <Stylesheet href="/pkg/ui.css"/>
       <Router>
-        <header class="p-4 flex gap-4 bg-neutral-950 text-neutral-50">
-          <A href="/">"Yus"</A>
-          <A href="/demos">"Demos"</A>
+        <header class="sticky top-0 bg-surface/85 backdrop-blur">
+          <div class="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
+            <a href="/" class="text-2xl font-extrabold text-primary">YUS</a>
+            <nav class="hidden md:flex gap-8 text-text">
+              <a href="/projects">Projects</a>
+              <a href="/about">About</a>
+              <a href="/contact">Contact</a>
+            </nav>
+          </div>
         </header>
 
         <main class="min-h-screen p-4">
           <RoutesMenu/>
         </main>
 
-        <footer class="p-4 text-center bg-neutral-950 text-neutral-50">
-          "© 2025 Yus – curiosity compiled"
+        <footer class="bg-surface text-text py-8">
+          <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between gap-8">
+            <p>"© 2025 Yus — Ideas in orbit; thoughts worth circling back to."</p>
+            <nav class="flex gap-6 underline-offset-4">
+              <a href="https://github.com/yus-works" target="_blank">GitHub</a>
+              <a href="/contact">Contact</a>
+            </nav>
+          </div>
         </footer>
       </Router>
     }
