@@ -6,11 +6,10 @@ struct Camera {
 var<uniform> camera: Camera;
 
 struct VSIn {
-    @location(0) position: vec3<f32>,
-    @location(1) normal: vec3<f32>,
-    @location(2) uv: vec2<f32>,
-    // four columns of the model matrix
-    @location(3) m0: vec4<f32>,
+    @location(0) position: vec3<f32>,  // <- from Vertex::ATTRIBS[0]
+    @location(1) normal: vec3<f32>,    // <- from Vertex::ATTRIBS[1]
+    @location(2) uv: vec2<f32>,        // <- from Vertex::ATTRIBS[2]
+    @location(3) m0: vec4<f32>,        // <- from InstanceRaw (4 columns of model matrix)
     @location(4) m1: vec4<f32>,
     @location(5) m2: vec4<f32>,
     @location(6) m3: vec4<f32>,
