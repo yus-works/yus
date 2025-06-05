@@ -4,7 +4,6 @@ use actix_web::{web, App, HttpServer, middleware::Logger};
 use std::{env::current_dir, path::PathBuf};
 use std::env;
 
-
 async fn spa() -> actix_files::NamedFile {
     actix_files::NamedFile::open("../dist/index.html").unwrap()
 }
@@ -19,17 +18,17 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .service(Files::new("/",        "./dist").index_file("index.html"))
-            .service(Files::new("/assets",  "./ui/assets"))
+            .service(Files::new("/pkg", "./dist"))       // for .js, .css, .wasm
+            .service(Files::new("/assets", "./dist/assets")) // for fonts and images
             .default_service(web::get().to(|| async {
-            match actix_files::NamedFile::open_async("./dist/index.html").await {
-                Ok(file) => Ok(file),
-                Err(e) => {
-                    eprintln!("shit: {:?}", e);
-                    Err(e)
+                match actix_files::NamedFile::open_async("./dist/index.html").await {
+                    Ok(file) => Ok(file),
+                    Err(e) => {
+                        eprintln!("shit: {:?}", e);
+                        Err(e)
+                    }
                 }
-            }
-        }))
+            }))
     })
     .bind(("0.0.0.0", port))?
     .run()
