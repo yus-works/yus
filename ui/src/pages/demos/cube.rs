@@ -229,7 +229,8 @@ pub fn CubeDemo() -> impl IntoView {
           ></canvas>
 
           <div id="hint"
-               onmouseleave="this.remove()"
+               onmouseenter="this.dataset.entered = Date.now()"
+               onmousemove="if (Date.now() - this.dataset.entered > 350) { this.remove(); }"
                class="absolute inset-0 flex flex-col items-center justify-center
                       bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
                       transition-opacity duration-500
