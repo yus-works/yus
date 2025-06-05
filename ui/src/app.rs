@@ -13,7 +13,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();      // NOTE: sets up <head> manager ?
 
     view! {
-      <Stylesheet href="/pkg/ui.css"/>
       <Router>
         <header class="sticky top-0 bg-surface/85 backdrop-blur">
           <div class="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
