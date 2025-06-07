@@ -1,12 +1,16 @@
 use std::cell::RefCell;
+use leptos::prelude::Get;
+use leptos::prelude::GlobalOnAttributes;
+use leptos::prelude::GlobalAttributes;
+use leptos::prelude::Show;
+use leptos::prelude::Set;
+use leptos::prelude::signal;
 use leptos::prelude::ElementChild;
 use std::rc::Rc;
 
 use leptos::prelude::Effect;
-use leptos::prelude::StyleAttribute;
 use leptos::view;
 use leptos::prelude::ClassAttribute;
-use leptos::prelude::GlobalAttributes;
 
 use leptos::component;
 use wasm_bindgen::prelude::Closure;
@@ -22,8 +26,46 @@ use web_sys;
 use gloo_timers::future::TimeoutFuture;
 
 #[component]
+fn WebGPUNotSupportedMsg() -> impl IntoView {
+    view! {
+        <div class="max-w-md mx-auto bg-blue-50 border border-blue-200 rounded-lg p-6 shadow-sm text-blue-800">
+          <h2 class="text-xl font-semibold mb-2">WebGPU Not Supported</h2>
+          <p class="mb-4 leading-relaxed">
+            This demo uses <span class="font-bold">WebGPU</span> for next-gen graphics.<br/>
+            Your browser does not support WebGPU yet.
+          </p>
+          <p class="font-semibold mb-3">To try the demos, use one of these browsers:</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <a href="https://www.google.com/chrome/" target="_blank" rel="noopener"
+               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
+              Chrome
+            </a>
+            <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener"
+               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
+              Edge
+            </a>
+            <a href="https://www.opera.com/" target="_blank" rel="noopener"
+               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
+              Opera
+            </a>
+            <a href="https://www.chromium.org/getting-involved/download-chromium/" target="_blank" rel="noopener"
+               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
+              Chromium
+            </a>
+          </div>
+          <p class="text-sm text-blue-700">
+            <span class="font-semibold">Note:</span>"Firefox and Safari do "<i>not</i> "support WebGPU by default as of 2025."<br/>
+            Enable <i>"chrome://flags/#enable-unsafe-webgpu"</i>" in Chrome if needed."
+          </p>
+        </div>
+    }
+}
+
+#[component]
 pub fn CubeDemo() -> impl IntoView {
     let canvas_id = "cube-demo-canvas";
+
+    let (web_gpu_supported, set_web_gpu_supported) = signal::<bool>(true);
 
     // runs once “next tick” of Leptos
     Effect::new(move |_| {
@@ -44,6 +86,7 @@ pub fn CubeDemo() -> impl IntoView {
             let state = match init_wgpu(&canvas).await {
                 Ok(s) => s,
                 Err(err) => {
+                    set_web_gpu_supported.set(false);
                     web_sys::console::error_1(&format!("WGPU init failed: {:?}", err).into());
                     return;
                 }
@@ -221,6 +264,11 @@ pub fn CubeDemo() -> impl IntoView {
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.
     view! {
         <div class="relative w-full group">
+          <Show
+            when=move || matches!(web_gpu_supported.get(), true)
+            fallback=move || view! { <WebGPUNotSupportedMsg/> }
+          >
+
           <canvas
             id=canvas_id
             width="800"
@@ -238,6 +286,8 @@ pub fn CubeDemo() -> impl IntoView {
             "✋"
             <p>"Click & drag – scroll to zoom"</p>
           </div>
+
+          </Show>
         </div>
     }
 }
