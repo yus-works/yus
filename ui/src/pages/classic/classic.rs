@@ -10,19 +10,10 @@ use crate::pages::demos::cube::CubeDemo;
 pub fn classic_main() -> impl IntoView {
     view! {
       <main class="max-w-6xl mx-auto px-6">
-        // Hero
         <section class="py-24">
           <h1 class="text-5xl sm:text-7xl font-display text-text mb-6 leading-tight">
-            I build things<br class="hidden sm:block"/> you can poke.
+            Curious by nature,<br/>Serious by habit.
           </h1>
-          <p class="font-sans text-xl mb-10 max-w-xl text-text">
-          "
-            Rockets in Minecraft, satellites on your phone,
-            and (coming soon) real life simulation experiences.
-          "
-            <br/>
-          " Pick one ↓ "
-          </p>
           <a href="#projects"
              class="inline-block bg-primary text-neutral-dark px-8 py-4 rounded-full
                     hover:bg-primary transition">View Projects</a>
@@ -65,7 +56,7 @@ pub fn classic_main() -> impl IntoView {
           </p>
         </section>
 
-        <section id="shader-lab" class="py-20">
+        <section id="shader-lab" class="py-8">
           <h2 class="text-3xl text-text font-bold mb-2">Shader Playground</h2>
           <p class="mb-6 text-text">
             Tweak any preset or pick another demo below.
@@ -89,10 +80,6 @@ pub fn classic_main() -> impl IntoView {
           <p class="mt-4 text-sm text-text">
             More doodles live at <a href="/projects/experiments" class="underline">experiments</a>.
           </p>
-        </section>
-
-        <section class="py-8">
-          <h2 class="text-3xl font-bold text-text mb-8">WebGPU demo</h2>
         </section>
       </main>
     }
