@@ -171,7 +171,7 @@ pub struct SurfaceContext {
 impl SurfaceContext {
     async fn new_async(canvas: &HtmlCanvasElement) -> Result<Self> {
         let instance = wgpu::Instance::default();
-        let surface = create_surface_static(&instance, canvas);
+        let surface = create_surface_static(&instance, canvas)?;
 
         let adapter = request_adapter(&instance, &surface).await?;
         let (device, queue) = request_device(&adapter).await?;

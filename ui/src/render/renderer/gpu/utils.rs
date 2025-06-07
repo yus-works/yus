@@ -94,11 +94,11 @@ pub async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wg
 pub fn create_surface_static(
     instance: &wgpu::Instance,
     canvas: &HtmlCanvasElement,
-) -> wgpu::Surface<'static> {
+) -> anyhow::Result<wgpu::Surface<'static>> {
     let target = SurfaceTarget::Canvas(canvas.clone());
     instance
         .create_surface(target)
-        .expect("webgpu surface init failed")
+        .context("webgpu surface init failed")
 }
 
 pub async fn request_adapter(
