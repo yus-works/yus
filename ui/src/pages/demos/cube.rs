@@ -1,11 +1,17 @@
 use std::cell::RefCell;
+use anyhow::Result;
+use leptos::prelude::create_rw_signal;
 use leptos::prelude::Get;
+use leptos::prelude::GetUntracked;
 use leptos::prelude::GlobalOnAttributes;
 use leptos::prelude::GlobalAttributes;
+use leptos::prelude::RwSignal;
 use leptos::prelude::Show;
 use leptos::prelude::Set;
 use leptos::prelude::signal;
 use leptos::prelude::ElementChild;
+use leptos::prelude::WriteSignal;
+use wasm_bindgen::convert::FromWasmAbi;
 use std::rc::Rc;
 
 use leptos::prelude::Effect;
@@ -15,6 +21,7 @@ use leptos::prelude::ClassAttribute;
 use leptos::component;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
+use crate::render::renderer::gpu;
 use crate::render::web_gpu::GpuState;
 use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;
@@ -75,7 +82,8 @@ where
 pub fn CubeDemo() -> impl IntoView {
     let canvas_id = "cube-demo-canvas";
 
-    let (web_gpu_supported, set_web_gpu_supported) = signal::<bool>(true);
+    let gpu_support = RwSignal::new(true);
+    let show_hint = RwSignal::new(true);
 
     // runs once “next tick” of Leptos
     Effect::new(move |_| {
@@ -96,7 +104,7 @@ pub fn CubeDemo() -> impl IntoView {
             let state = match init_wgpu(&canvas).await {
                 Ok(s) => s,
                 Err(err) => {
-                    set_web_gpu_supported.set(false);
+                    gpu_support.set(false);
                     web_sys::console::error_1(&format!("WGPU init failed: {:?}", err).into());
                     return;
                 }
@@ -110,120 +118,80 @@ pub fn CubeDemo() -> impl IntoView {
             //
 
             // ─── MOUSEDOWN ─────────────────────────────────────────────────────────────────
+            let st = state_rc.clone();
+            let cv = canvas.clone();
+            add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
+                if e.button() != 0 { return; }
 
-            let canvas_for_down = canvas.clone();
-            let state_for_down = state_rc.clone();
-            {
-                let on_mousedown = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                    // only left‐button
-                    if event.button() == 0 {
-                        let mut st = state_for_down.borrow_mut();
-                        st.dragging = true;
+                if show_hint.get_untracked() {      // cheap read without deps
+                    show_hint.set(false);
+                }
 
-                        let w = canvas_for_down.width() as f32;
-                        let h = canvas_for_down.height() as f32;
+                let mut st = st.borrow_mut();
+                st.dragging = true;
 
-                        // record starting mouse position (canvas‐relative)
-                        let mx = (event.client_x() as f32) - w;
-                        let my = (event.client_y() as f32) - h;
-                        st.last_mouse_pos = (mx, my);
+                let w = cv.width() as f32;
+                let h = cv.height() as f32;
 
-                        // prevent default so canvas doesn’t lose focus
-                        event.prevent_default();
-                    }
-                }) as Box<dyn FnMut(_)>);
+                // record starting mouse position (canvas‐relative)
+                let mx = (e.client_x() as f32) - w;
+                let my = (e.client_y() as f32) - h;
+                st.last_mouse_pos = (mx, my);
 
-                canvas
-                    .add_event_listener_with_callback(
-                        "mousedown",
-                        on_mousedown.as_ref().unchecked_ref()
-                    )
-                    .unwrap();
-                on_mousedown.forget();
-            }
+                // prevent default so canvas doesn’t lose focus
+                e.prevent_default();
+            });
 
             // ─── MOUSEMOVE ───
+            let st = state_rc.clone();
+            let cv = canvas.clone();
+            add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
+                let mut st = st.borrow_mut();
 
-            {
-                let canvas_for_move = canvas.clone();
-                let state_for_move = state_rc.clone();
+                if !st.dragging { return; }
 
-                let on_mousemove = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-                    let mut st = state_for_move.borrow_mut();
+                let w = cv.width() as f32;
+                let h = cv.height() as f32;
 
-                    if st.dragging {
-                        let w = canvas_for_move.width() as f32;
-                        let h = canvas_for_move.height() as f32;
+                // compute delta since last frame
+                let mx = (e.client_x() as f32) - w;
+                let my = (e.client_y() as f32) - h;
 
-                        // compute delta since last frame
-                        let mx = (event.client_x() as f32) - w;
-                        let my = (event.client_y() as f32) - h;
+                let (lx, ly) = st.last_mouse_pos;
+                let dx = mx - lx;
+                let dy = my - ly;
+                st.last_mouse_pos = (mx, my);
 
-                        let (lx, ly) = st.last_mouse_pos;
-                        let dx = mx - lx;
-                        let dy = my - ly;
-                        st.last_mouse_pos = (mx, my);
+                // update camera angles
+                st.camera.yaw += dx * 0.005;
+                st.camera.pitch += dy * 0.005;
 
-                        // update camera angles
-                        st.camera.yaw += dx * 0.005;
-                        st.camera.pitch += dy * 0.005;
-
-                        // clamp pitch so we don’t flip upside‐down:
-                        let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
-                        st.camera.pitch = st.camera.pitch.clamp(-max_pitch, max_pitch);
-                    }
-                }) as Box<dyn FnMut(_)>);
-
-                canvas
-                    .add_event_listener_with_callback(
-                        "mousemove", on_mousemove.as_ref().unchecked_ref()
-                    )
-                    .unwrap();
-                on_mousemove.forget();
-            }
+                // clamp pitch so we don’t flip upside‐down:
+                let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
+                st.camera.pitch = st.camera.pitch.clamp(-max_pitch, max_pitch);
+            });
 
             // ─── MOUSEUP / MOUSELEAVE ───
-            {
-                let state_for_up = state_rc.clone();
-                let on_mouseup = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
-                    let mut st = state_for_up.borrow_mut();
-                    st.dragging = false;
-                }) as Box<dyn FnMut(_)>);
+            let st = state_rc.clone();
+            add_listener(&canvas, "pointerup", move |e: web_sys::PointerEvent| {
+                let mut st = st.borrow_mut();
+                st.dragging = false;
+            });
 
-                canvas
-                    .add_event_listener_with_callback(
-                        "mouseup",
-                        on_mouseup.as_ref().unchecked_ref()
-                    )
-                    .unwrap();
-                canvas
-                    .add_event_listener_with_callback(
-                        "mouseleave",
-                        on_mouseup.as_ref().unchecked_ref()
-                    )
-                    .unwrap(); // also stop dragging if pointer leaves
-                on_mouseup.forget();
-            }
+            let st = state_rc.clone();
+            add_listener(&canvas, "pointerleave", move |e: web_sys::PointerEvent| {
+                let mut st = st.borrow_mut();
+                st.dragging = false;
+            });
 
             // ─── WHEEL (ZOOM) ───
-            {
-                let state_for_wheel = state_rc.clone();
-
-                let on_wheel = Closure::wrap(Box::new(move |event: web_sys::WheelEvent| {
-                    let mut st = state_for_wheel.borrow_mut();
-                    let delta = event.delta_y() as f32 * 0.01;
-                    st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
-                    event.prevent_default();
-                }) as Box<dyn FnMut(_)>);
-
-                canvas
-                    .add_event_listener_with_callback(
-                        "wheel",
-                        on_wheel.as_ref().unchecked_ref()
-                    )
-                    .unwrap();
-                on_wheel.forget();
-            }
+            let st = state_rc.clone();
+            add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
+                let mut st = st.borrow_mut();
+                let delta = e.delta_y() as f32 * 0.01;
+                st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
+                e.prevent_default();
+            });
 
             //
             // ───  END INTERACTIVITY SETUP ───────────────────────────────────────────────────
@@ -275,7 +243,7 @@ pub fn CubeDemo() -> impl IntoView {
     view! {
         <div class="relative w-full group">
           <Show
-            when=move || matches!(web_gpu_supported.get(), true)
+            when=move || matches!(gpu_support.get(), true)
             fallback=move || view! { <WebGPUNotSupportedMsg/> }
           >
 
@@ -286,16 +254,18 @@ pub fn CubeDemo() -> impl IntoView {
             class="w-full"
           ></canvas>
 
-          <div id="hint"
-               onmouseenter="this.dataset.entered = Date.now()"
-               onmousemove="if (Date.now() - this.dataset.entered > 350) { this.remove(); }"
-               class="absolute inset-0 flex flex-col items-center justify-center
-                      bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
-                      transition-opacity duration-500
-                      group-hover:opacity-0">
-            "✋"
-            <p>"Click & drag – scroll to zoom"</p>
-          </div>
+          <Show
+            when=move || show_hint.get()
+            >
+              <div id="hint"
+                   class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center
+                          bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
+                          transition-opacity duration-500
+                          group-hover:opacity-0">
+                "✋"
+                <p>"Click & drag – scroll to zoom"</p>
+              </div>
+          </Show>
 
           </Show>
         </div>
