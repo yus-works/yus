@@ -61,6 +61,16 @@ fn WebGPUNotSupportedMsg() -> impl IntoView {
     }
 }
 
+fn add_listener<T, F>(target: &HtmlCanvasElement, ty: &str, f: F)
+where
+    T: 'static + JsCast + FromWasmAbi,
+    F: 'static + FnMut(T),
+{
+    let cb = Closure::wrap(Box::new(f) as Box<dyn FnMut(_)>);
+    target.add_event_listener_with_callback(ty, cb.as_ref().unchecked_ref()).unwrap();
+    cb.forget();
+}
+
 #[component]
 pub fn CubeDemo() -> impl IntoView {
     let canvas_id = "cube-demo-canvas";
