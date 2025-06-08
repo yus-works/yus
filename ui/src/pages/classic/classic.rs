@@ -72,6 +72,8 @@ pub fn classic_main() -> impl IntoView {
             <textarea id="shader" class="w-full h-128 bg-surface text-text p-4 font-mono
                                          rounded-xl resize-none"></textarea>
 
+          // TODO: make demo's cover full width and have the editor be a tab you can switch to
+          // instead of one next to the other as the demo window on mobile is too small
             <div class="w-full h-128 rounded-xl border overflow-hidden flex items-center justify-center">
               <CubeDemo />
             </div>
