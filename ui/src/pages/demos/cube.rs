@@ -29,54 +29,9 @@ use wasm_bindgen_futures::spawn_local;
 use crate::render::web_gpu::init_wgpu;
 
 use web_sys;
+use super::utils;
 
 use gloo_timers::future::TimeoutFuture;
-
-#[component]
-fn WebGPUNotSupportedMsg() -> impl IntoView {
-    view! {
-        <div class="max-w-md mx-auto bg-blue-50 border border-blue-200 rounded-lg p-6 shadow-sm text-blue-800">
-          <h2 class="text-xl font-semibold mb-2">WebGPU Not Supported</h2>
-          <p class="mb-4 leading-relaxed">
-            This demo uses <span class="font-bold">WebGPU</span> for next-gen graphics.<br/>
-            Your browser does not support WebGPU yet.
-          </p>
-          <p class="font-semibold mb-3">To try the demos, use one of these browsers:</p>
-          <div class="flex flex-wrap gap-2 mb-4">
-            <a href="https://www.google.com/chrome/" target="_blank" rel="noopener"
-               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
-              Chrome
-            </a>
-            <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener"
-               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
-              Edge
-            </a>
-            <a href="https://www.opera.com/" target="_blank" rel="noopener"
-               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
-              Opera
-            </a>
-            <a href="https://www.chromium.org/getting-involved/download-chromium/" target="_blank" rel="noopener"
-               class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition">
-              Chromium
-            </a>
-          </div>
-          <p class="text-sm text-blue-700">
-            <span class="font-semibold">Note:</span>"Firefox and Safari do "<i>not</i> "support WebGPU by default as of 2025."<br/>
-            Enable <i>"chrome://flags/#enable-unsafe-webgpu"</i>" in Chrome if needed."
-          </p>
-        </div>
-    }
-}
-
-fn add_listener<T, F>(target: &HtmlCanvasElement, ty: &str, f: F)
-where
-    T: 'static + JsCast + FromWasmAbi,
-    F: 'static + FnMut(T),
-{
-    let cb = Closure::wrap(Box::new(f) as Box<dyn FnMut(_)>);
-    target.add_event_listener_with_callback(ty, cb.as_ref().unchecked_ref()).unwrap();
-    cb.forget();
-}
 
 #[component]
 pub fn CubeDemo() -> impl IntoView {
@@ -120,7 +75,7 @@ pub fn CubeDemo() -> impl IntoView {
             // ─── MOUSEDOWN ─────────────────────────────────────────────────────────────────
             let st = state_rc.clone();
             let cv = canvas.clone();
-            add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
+            utils::add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
                 if e.button() != 0 { return; }
 
                 if show_hint.get_untracked() {      // cheap read without deps
@@ -145,7 +100,7 @@ pub fn CubeDemo() -> impl IntoView {
             // ─── MOUSEMOVE ───
             let st = state_rc.clone();
             let cv = canvas.clone();
-            add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
+            utils::add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
                 let mut st = st.borrow_mut();
 
                 if !st.dragging { return; }
@@ -173,20 +128,20 @@ pub fn CubeDemo() -> impl IntoView {
 
             // ─── MOUSEUP / MOUSELEAVE ───
             let st = state_rc.clone();
-            add_listener(&canvas, "pointerup", move |e: web_sys::PointerEvent| {
+            utils::add_listener(&canvas, "pointerup", move |e: web_sys::PointerEvent| {
                 let mut st = st.borrow_mut();
                 st.dragging = false;
             });
 
             let st = state_rc.clone();
-            add_listener(&canvas, "pointerleave", move |e: web_sys::PointerEvent| {
+            utils::add_listener(&canvas, "pointerleave", move |e: web_sys::PointerEvent| {
                 let mut st = st.borrow_mut();
                 st.dragging = false;
             });
 
             // ─── WHEEL (ZOOM) ───
             let st = state_rc.clone();
-            add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
+            utils::add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
                 let mut st = st.borrow_mut();
                 let delta = e.delta_y() as f32 * 0.01;
                 st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
@@ -244,7 +199,7 @@ pub fn CubeDemo() -> impl IntoView {
         <div class="relative w-full group">
           <Show
             when=move || matches!(gpu_support.get(), true)
-            fallback=move || view! { <WebGPUNotSupportedMsg/> }
+            fallback=move || view! { <utils::WebGPUNotSupportedMsg/> }
           >
 
           <canvas
