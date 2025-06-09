@@ -1,8 +1,16 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use leptos::prelude::ElementChild;
 use leptos::prelude::ClassAttribute;
+use leptos::prelude::GetUntracked;
+use leptos::prelude::RwSignal;
+use leptos::prelude::Set;
 use leptos::{component, view, IntoView};
 use wasm_bindgen::{convert::FromWasmAbi, prelude::Closure, JsCast};
 use web_sys::HtmlCanvasElement;
+
+use crate::render::web_gpu::GpuState;
 
 #[component]
 pub fn WebGPUNotSupportedMsg() -> impl IntoView {
@@ -50,3 +58,75 @@ where
     cb.forget();
 }
 
+
+pub fn add_camera_orbit(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElement, show_hint: RwSignal<bool>) {
+    let st = state.clone();
+    let cv = canvas.clone();
+    add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
+        if e.button() != 0 {
+            return;
+        }
+
+        if show_hint.get_untracked() {
+            show_hint.set(false);
+        }
+
+        let mut st = st.borrow_mut();
+        st.dragging = true;
+
+        let w = cv.width() as f32;
+        let h = cv.height() as f32;
+
+        // record starting mouse position (canvas‐relative)
+        let mx = (e.client_x() as f32) - w;
+        let my = (e.client_y() as f32) - h;
+        st.last_mouse_pos = (mx, my);
+
+        // prevent default so canvas doesn’t lose focus
+        e.prevent_default();
+    });
+
+    // ─── MOUSEMOVE ───
+    let st = state.clone();
+    let cv = canvas.clone();
+    add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
+        let mut st = st.borrow_mut();
+
+        if !st.dragging {
+            return;
+        }
+
+        let w = cv.width() as f32;
+        let h = cv.height() as f32;
+
+        // compute delta since last frame
+        let mx = (e.client_x() as f32) - w;
+        let my = (e.client_y() as f32) - h;
+
+        let (lx, ly) = st.last_mouse_pos;
+        let dx = mx - lx;
+        let dy = my - ly;
+        st.last_mouse_pos = (mx, my);
+
+        // update camera angles
+        st.camera.yaw += dx * 0.005;
+        st.camera.pitch += dy * 0.005;
+
+        // clamp pitch so we don’t flip upside‐down:
+        let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
+        st.camera.pitch = st.camera.pitch.clamp(-max_pitch, max_pitch);
+    });
+
+    // ─── MOUSEUP / MOUSELEAVE ───
+    let st = state.clone();
+    add_listener(&canvas, "pointerup", move |_: web_sys::PointerEvent| {
+        let mut st = st.borrow_mut();
+        st.dragging = false;
+    });
+
+    let st = state.clone();
+    add_listener(&canvas, "pointerleave", move |_: web_sys::PointerEvent| {
+        let mut st = st.borrow_mut();
+        st.dragging = false;
+    });
+}
