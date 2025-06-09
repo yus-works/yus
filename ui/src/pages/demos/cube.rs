@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use leptos::view;
 
-use crate::render::web_gpu::GpuState;
+use crate::render::renderer::gpu::GpuState;
 use crate::render::web_gpu::init_wgpu;
 use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;

@@ -10,7 +10,8 @@ use leptos::{component, view, IntoView};
 use wasm_bindgen::{convert::FromWasmAbi, prelude::Closure, JsCast};
 use web_sys::HtmlCanvasElement;
 
-use crate::render::web_gpu::GpuState;
+use crate::render::renderer::gpu::GpuState;
+
 
 #[component]
 pub fn WebGPUNotSupportedMsg() -> impl IntoView {

@@ -4,7 +4,8 @@ use glam::{Mat4, Vec3};
 use wgpu::{util::DeviceExt, SurfaceTarget};
 use crate::web_sys::HtmlCanvasElement;
 
-use crate::render::web_gpu::SurfaceContext;
+use super::surface_context::SurfaceContext;
+
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
