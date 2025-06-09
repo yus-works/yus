@@ -1,5 +1,4 @@
 use glam::{Mat4, Vec3};
-use web_sys::HtmlCanvasElement;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
 use crate::render::renderer::camera::Camera;
