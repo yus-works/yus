@@ -31,11 +31,10 @@ impl GpuState {
         (self.surface_context.config.width as f32, self.surface_context.config.height as f32)
     }
 
-    pub fn render(&mut self, canvas: &Option<HtmlCanvasElement>) {
+    pub fn render(&mut self) {
         // 1) state already ready
 
         // 2) acquire next frame
-        let canvas = canvas.as_ref().unwrap();
         let frame = self.surface_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&Default::default());
 

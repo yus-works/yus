@@ -63,14 +63,13 @@ pub fn CubeDemo() -> impl IntoView {
             // we’ll store the RAF callback so we can re‐schedule it each frame
             let f: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
             let g = f.clone();
-            let canvas_clone = canvas.clone();
 
             // now we kick off requestAnimationFrame(…) and draw each frame:
             *g.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
                 // 1) borrow‐and‐render one frame
                 {
                     let mut s = state_rc.borrow_mut();
-                    s.render(&Some(canvas_clone.clone()));
+                    s.render();
                 }
 
                 // 2) schedule next frame
