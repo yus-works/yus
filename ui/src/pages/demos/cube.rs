@@ -1,35 +1,22 @@
+use leptos::prelude::{
+    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show,
+};
 use std::cell::RefCell;
-use anyhow::Result;
-use leptos::prelude::create_rw_signal;
-use leptos::prelude::Get;
-use leptos::prelude::GetUntracked;
-use leptos::prelude::GlobalOnAttributes;
-use leptos::prelude::GlobalAttributes;
-use leptos::prelude::RwSignal;
-use leptos::prelude::Show;
-use leptos::prelude::Set;
-use leptos::prelude::signal;
-use leptos::prelude::ElementChild;
-use leptos::prelude::WriteSignal;
-use wasm_bindgen::convert::FromWasmAbi;
 use std::rc::Rc;
 
-use leptos::prelude::Effect;
 use leptos::view;
-use leptos::prelude::ClassAttribute;
 
-use leptos::component;
-use wasm_bindgen::prelude::Closure;
-use wasm_bindgen::JsCast;
-use crate::render::renderer::gpu;
 use crate::render::web_gpu::GpuState;
+use crate::render::web_gpu::init_wgpu;
 use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;
+use leptos::component;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::Closure;
 use wasm_bindgen_futures::spawn_local;
-use crate::render::web_gpu::init_wgpu;
 
-use web_sys;
 use super::utils;
+use web_sys;
 
 use gloo_timers::future::TimeoutFuture;
 
@@ -76,9 +63,11 @@ pub fn CubeDemo() -> impl IntoView {
             let st = state_rc.clone();
             let cv = canvas.clone();
             utils::add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
-                if e.button() != 0 { return; }
+                if e.button() != 0 {
+                    return;
+                }
 
-                if show_hint.get_untracked() {      // cheap read without deps
+                if show_hint.get_untracked() {
                     show_hint.set(false);
                 }
 
@@ -103,7 +92,9 @@ pub fn CubeDemo() -> impl IntoView {
             utils::add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
                 let mut st = st.borrow_mut();
 
-                if !st.dragging { return; }
+                if !st.dragging {
+                    return;
+                }
 
                 let w = cv.width() as f32;
                 let h = cv.height() as f32;
@@ -170,26 +161,14 @@ pub fn CubeDemo() -> impl IntoView {
                 // 2) schedule next frame
                 web_sys::window()
                     .unwrap()
-                    .request_animation_frame(
-                        f.borrow()
-                            .as_ref()
-                            .unwrap()
-                            .as_ref()
-                            .unchecked_ref(),
-                    )
+                    .request_animation_frame(f.borrow().as_ref().unwrap().as_ref().unchecked_ref())
                     .unwrap();
             }) as Box<dyn FnMut(f64)>));
 
             // initial kick
             web_sys::window()
                 .unwrap()
-                .request_animation_frame(
-                    g.borrow()
-                        .as_ref()
-                        .unwrap()
-                        .as_ref()
-                        .unchecked_ref(),
-                )
+                .request_animation_frame(g.borrow().as_ref().unwrap().as_ref().unchecked_ref())
                 .unwrap();
         });
     });
