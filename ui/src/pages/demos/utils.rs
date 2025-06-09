@@ -130,3 +130,13 @@ pub fn add_camera_orbit(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElemen
         st.dragging = false;
     });
 }
+
+pub fn add_mousewheel_zoom(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElement) {
+    let st = state.clone();
+    add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
+        let mut st = st.borrow_mut();
+        let delta = e.delta_y() as f32 * 0.01;
+        st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
+        e.prevent_default();
+    });
+}

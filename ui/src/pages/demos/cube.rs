@@ -55,24 +55,8 @@ pub fn CubeDemo() -> impl IntoView {
             // 4) wrap state in Rc<RefCell> so event closures can mutate it
             let state_rc: Rc<RefCell<GpuState>> = Rc::new(RefCell::new(state));
 
-            //
-            // ───  INTERACTIVITY SETUP  ────────────────────────────────────────────────────
-            //
-
             utils::add_camera_orbit(&state_rc, &canvas, show_hint);
-
-            // ─── WHEEL (ZOOM) ───
-            let st = state_rc.clone();
-            utils::add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
-                let mut st = st.borrow_mut();
-                let delta = e.delta_y() as f32 * 0.01;
-                st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
-                e.prevent_default();
-            });
-
-            //
-            // ───  END INTERACTIVITY SETUP ───────────────────────────────────────────────────
-            //
+            utils::add_mousewheel_zoom(&state_rc, &canvas);
 
             // ───  RENDER LOOP ────────────────────────────────────────────────────────────────
 
@@ -119,9 +103,7 @@ pub fn CubeDemo() -> impl IntoView {
             class="w-full"
           ></canvas>
 
-          <Show
-            when=move || show_hint.get()
-            >
+          <Show when=move || show_hint.get()>
               <div id="hint"
                    class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center
                           bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
