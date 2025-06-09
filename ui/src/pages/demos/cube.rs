@@ -1,5 +1,5 @@
 use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show,
+    ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Set, Show,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
