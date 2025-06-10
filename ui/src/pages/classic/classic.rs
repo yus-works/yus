@@ -94,7 +94,7 @@ fn ShaderLab() -> impl IntoView {
             // TODO: make demo's cover full width and have the editor be a tab you can switch to
             // instead of one next to the other as the demo window on mobile is too small
                 <div class="w-full h-96 rounded-xl border overflow-hidden flex items-center justify-center">
-                    <CubeDemo />
+                    <CubeDemo vs_src=vs_src fs_src=fs_src />
                 </div>
             </div>
         </section>
