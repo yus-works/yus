@@ -12,5 +12,6 @@ pub mod app;
 pub mod routes;
 pub mod pages;
 pub mod render;
+pub mod components;
 
 pub use crate::app::App;

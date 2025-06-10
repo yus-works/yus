@@ -4,7 +4,7 @@ use leptos::prelude::ClassAttribute;
 use leptos::prelude::view;
 use leptos::{IntoView, component};
 
-use crate::pages::demos::cube::CubeDemo;
+use crate::components::demos::cube::CubeDemo;
 
 #[component]
 pub fn classic_main() -> impl IntoView {

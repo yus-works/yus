@@ -7,11 +7,14 @@ use leptos::view;
 use leptos::IntoView;
 use leptos::component;
 
-use crate::pages::{
+use crate::components::{
   demos_menu::DemosMenu,
-  home::Home,
   demos::cube::CubeDemo,
+};
+
+use crate::pages::{
   classic::classic::ClassicMain,
+  home::Home,
 };
 
 #[component]
