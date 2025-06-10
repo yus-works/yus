@@ -163,7 +163,7 @@ pub fn add_mousewheel_zoom(state: &Rc<RefCell<Option<GpuState>>>, canvas: &HtmlC
         "GpuState is None and somehow passed the guard clause. This should not be possible."
     ); // now I can safely unwrap past this point
 
-    
+
     let st = state.clone();
     add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
         let mut guard = st.borrow_mut();
