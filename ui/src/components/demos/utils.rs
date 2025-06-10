@@ -1,17 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use leptos::prelude::ElementChild;
+use anyhow::Result;
+use anyhow::anyhow;
 use leptos::prelude::ClassAttribute;
+use leptos::prelude::ElementChild;
 use leptos::prelude::GetUntracked;
 use leptos::prelude::RwSignal;
 use leptos::prelude::Set;
-use leptos::{component, view, IntoView};
-use wasm_bindgen::{convert::FromWasmAbi, prelude::Closure, JsCast};
+use leptos::{IntoView, component, view};
+use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
 
 use crate::render::renderer::gpu::GpuState;
-
 
 #[component]
 pub fn WebGPUNotSupportedMsg() -> impl IntoView {
@@ -55,12 +56,26 @@ where
     F: 'static + FnMut(T),
 {
     let cb = Closure::wrap(Box::new(f) as Box<dyn FnMut(_)>);
-    target.add_event_listener_with_callback(ty, cb.as_ref().unchecked_ref()).unwrap();
+    target
+        .add_event_listener_with_callback(ty, cb.as_ref().unchecked_ref())
+        .unwrap();
     cb.forget();
 }
 
+pub fn add_camera_orbit(
+    state: &Rc<RefCell<Option<GpuState>>>,
+    canvas: &HtmlCanvasElement,
+    show_hint: RwSignal<bool>,
+) -> Result<()> {
+    if state.clone().borrow().is_none() {
+        return Err(anyhow!("Gpu state is None"));
+    }
 
-pub fn add_camera_orbit(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElement, show_hint: RwSignal<bool>) {
+    assert!(
+        state.clone().borrow().is_some(),
+        "GpuState is None and somehow passed the guard clause. This should not be possible."
+    ); // now I can safely unwrap past this point
+
     let st = state.clone();
     let cv = canvas.clone();
     add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
@@ -72,7 +87,8 @@ pub fn add_camera_orbit(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElemen
             show_hint.set(false);
         }
 
-        let mut st = st.borrow_mut();
+        let mut guard = st.borrow_mut();
+        let st = guard.as_mut().unwrap();
         st.dragging = true;
 
         let w = cv.width() as f32;
@@ -91,7 +107,8 @@ pub fn add_camera_orbit(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElemen
     let st = state.clone();
     let cv = canvas.clone();
     add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
-        let mut st = st.borrow_mut();
+        let mut guard = st.borrow_mut();
+        let st = guard.as_mut().unwrap();
 
         if !st.dragging {
             return;
@@ -121,23 +138,40 @@ pub fn add_camera_orbit(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElemen
     // ─── MOUSEUP / MOUSELEAVE ───
     let st = state.clone();
     add_listener(&canvas, "pointerup", move |_: web_sys::PointerEvent| {
-        let mut st = st.borrow_mut();
+        let mut guard = st.borrow_mut();
+        let st = guard.as_mut().unwrap();
         st.dragging = false;
     });
 
     let st = state.clone();
     add_listener(&canvas, "pointerleave", move |_: web_sys::PointerEvent| {
-        let mut st = st.borrow_mut();
+        let mut guard = st.borrow_mut();
+        let st = guard.as_mut().unwrap();
         st.dragging = false;
     });
+
+    Ok(())
 }
 
-pub fn add_mousewheel_zoom(state: &Rc<RefCell<GpuState>>, canvas: &HtmlCanvasElement) {
+pub fn add_mousewheel_zoom(state: &Rc<RefCell<Option<GpuState>>>, canvas: &HtmlCanvasElement) -> Result<()> {
+    if state.clone().borrow().is_none() {
+        return Err(anyhow!("Gpu state is None"));
+    }
+
+    assert!(
+        state.clone().borrow().is_some(),
+        "GpuState is None and somehow passed the guard clause. This should not be possible."
+    ); // now I can safely unwrap past this point
+
+    
     let st = state.clone();
     add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
-        let mut st = st.borrow_mut();
+        let mut guard = st.borrow_mut();
+        let st = guard.as_mut().unwrap();
         let delta = e.delta_y() as f32 * 0.01;
         st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
         e.prevent_default();
     });
+
+    Ok(())
 }
