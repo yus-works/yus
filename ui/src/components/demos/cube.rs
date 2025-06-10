@@ -24,6 +24,8 @@ use gloo_timers::future::TimeoutFuture;
 pub fn CubeDemo() -> impl IntoView {
     let canvas_id = "cube-demo-canvas";
 
+    let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
+
     let gpu_support = RwSignal::new(true);
     let show_hint = RwSignal::new(true);
 
@@ -52,8 +54,8 @@ pub fn CubeDemo() -> impl IntoView {
                 }
             };
 
-            // 4) wrap state in Rc<RefCell> so event closures can mutate it
-            let state_rc: Rc<RefCell<GpuState>> = Rc::new(RefCell::new(state));
+            let state_rc = state_rc.clone();          // ← use the outer Rc
+            *state_rc.borrow_mut() = Some(state);      //   put the real state inside
 
             utils::add_camera_orbit(&state_rc, &canvas, show_hint);
             utils::add_mousewheel_zoom(&state_rc, &canvas);
