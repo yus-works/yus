@@ -15,6 +15,28 @@ use super::renderer::gpu::gpu_state::GpuState;
 use super::renderer::gpu::resource_context::ResourceContext;
 use super::renderer::gpu::surface_context::SurfaceContext;
 
+pub fn reload_pipeline(state: &mut GpuState, vs_src: &str, fs_src: &str) {
+    use std::borrow::Cow;
+
+    let vs = state.surface_context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("live VS shader"),
+        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(vs_src)),
+    });
+
+    let fs = state.surface_context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("live FS shader"),
+        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(fs_src)),
+    });
+
+    state.pipeline = create_pipeline(
+        &state.surface_context.device,
+        &state.surface_context.config,
+        &state.resource_context.bind_group_layout,
+        &VertexShader(vs),
+        &FragmentShader(fs)
+    );
+}
+
 
 pub fn create_pipeline(
     device: &wgpu::Device,
