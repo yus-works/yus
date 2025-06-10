@@ -27,6 +27,8 @@ fn Hero() -> impl IntoView {
 
 #[component]
 fn ProjectCards() -> impl IntoView {
+    // TODO: make little bubbles on each project card that say stuff 
+    // like "Done" "teamwork" "Live" "WIP" and so on
     view! {
         <section id="projects" class="py-16 grid sm:grid-cols-3 gap-8">
             <article class="bg-neutral-light rounded-xl overflow-hidden shadow">
