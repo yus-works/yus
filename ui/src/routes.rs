@@ -24,7 +24,7 @@ pub fn RoutesMenu() -> impl IntoView {
         <Route path=path!("")                view=Home        />
         <Route path=path!("/demos")          view=DemosMenu       />
         // <Route path=path!("/demos/mandelbrot") view=Mandelbrot/>
-        <Route path=path!("/demos/cube")     view=CubeDemo        />
+        // <Route path=path!("/demos/cube")     view=CubeDemo        />
         <Route path=path!("/classic")     view=ClassicMain        />
       </Routes>
     }
