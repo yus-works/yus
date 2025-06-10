@@ -53,13 +53,21 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
                 </button>
             </div>
 
-            // Editor
             <textarea
-                class="w-full h-[22rem] bg-surface text-text p-4 font-mono rounded-xl resize-none"
-
-                prop:value=active_src
-                on:input=on_input
+              class="w-full h-[22rem]
+                     bg-surface text-text text-xs
+                     p-4 font-mono rounded-xl resize-none
+                     border border-transparent
+                     focus:border-gray-300
+                     focus:outline-none
+                     focus:ring-1
+                     focus:ring-gray-400
+                     focus:ring-opacity-50
+              "
+              prop:value=active_src
+              on:input=on_input
             />
+
         </div>
     }
 }
