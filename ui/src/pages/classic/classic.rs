@@ -97,10 +97,6 @@ fn ShaderLab() -> impl IntoView {
                     <CubeDemo />
                 </div>
             </div>
-
-            <p class="mt-4 text-sm text-text">
-                More doodles live at <a href="/projects/experiments" class="underline">experiments</a>.
-            </p>
         </section>
     }
 }
