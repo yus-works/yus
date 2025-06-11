@@ -90,7 +90,7 @@ fn ShaderLab() -> impl IntoView {
                 <li><button data-demo="noise"    class="tab">Wobbly Planet</button></li>
             </ul>
 
-            <div class="grid md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ShaderEditor vs_src=vs_src fs_src=fs_src />
 
             // TODO: make demo's cover full width and have the editor be a tab you can switch to
