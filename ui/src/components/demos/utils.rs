@@ -87,6 +87,8 @@ pub fn add_camera_orbit(
             show_hint.set(false);
         }
 
+        let _ = cv.set_pointer_capture(e.pointer_id());
+
         let mut guard = st.borrow_mut();
         let st = guard.as_mut().unwrap();
         st.dragging = true;
@@ -133,11 +135,16 @@ pub fn add_camera_orbit(
         // clamp pitch so we don’t flip upside‐down:
         let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
         st.camera.pitch = st.camera.pitch.clamp(-max_pitch, max_pitch);
+
+        e.prevent_default();
     });
 
     // ─── MOUSEUP / MOUSELEAVE ───
     let st = state.clone();
-    add_listener(&canvas, "pointerup", move |_: web_sys::PointerEvent| {
+    let cv = canvas.clone();
+    add_listener(&canvas, "pointerup", move |e: web_sys::PointerEvent| {
+        let _ = cv.release_pointer_capture(e.pointer_id());
+
         let mut guard = st.borrow_mut();
         let st = guard.as_mut().unwrap();
         st.dragging = false;
