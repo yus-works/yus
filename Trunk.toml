@@ -1,5 +1,6 @@
 [build]
-target = "ui/index.html"
+target = "index.html"
+manifest = "ui/Cargo.toml"
 
 # [serve]
 # open = true

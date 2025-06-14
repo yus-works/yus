@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link data-trunk rel="rust" href="ui/"/>
+  <link data-trunk rel="tailwind-css" href="/ui/style/tailwind.css" />
+
+  <link data-trunk rel="copy-dir" href="/ui/assets" />
+  <link rel="icon" type="image/svg" href="/ui/assets/svg/yus-svg.svg">
+
+  <link rel="preload" href="/ui/assets/fonts/oxanium-v20-latin-800.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/ui/assets/fonts/sora-v16-latin-500.woff2" as="font" type="font/woff2" crossorigin>
+
+  <title>My Leptos + WGPU + Tailwind App</title>
+
+  <script type="module">
+    // 1) First load the polyfill from an ESM CDN:
+    import "https://esm.sh/@webgpu/webgpu-polyfill";
+
+    // 2) Then load your wasm bundle (produced by trunk / wasm-pack):
+    import init, { start } from "./pkg/your_leptos_app.js";
+
+    async function main() {
+      await init();
+      await start();   // #[wasm_bindgen(start)]
+    }
+    main();
+  </script>
+
+
+</head>
+<body class="bg-background">
+</body>
+</html>
