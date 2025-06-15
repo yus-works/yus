@@ -12,6 +12,8 @@ use leptos::{IntoView, component, view};
 use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
 
+use crate::render::renderer::camera_input;
+use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
 
 #[component]
@@ -63,21 +65,21 @@ where
 }
 
 pub fn add_camera_orbit(
-    state: &Rc<RefCell<Option<GpuState>>>,
+    camera_input: &Rc<RefCell<Option<CameraInput>>>,
     canvas: &HtmlCanvasElement,
     show_hint: RwSignal<bool>,
 ) -> Result<()> {
-    if state.clone().borrow().is_none() {
+    if camera_input.clone().borrow().is_none() {
         return Err(anyhow!("Gpu state is None"));
     }
 
     assert!(
-        state.clone().borrow().is_some(),
+        camera_input.clone().borrow().is_some(),
         "GpuState is None and somehow passed the guard clause. This should not be possible."
     ); // now I can safely unwrap past this point
 
-    let st = state.clone();
     let cv = canvas.clone();
+    let ci = camera_input.clone();
     add_listener(&canvas, "pointerdown", move |e: web_sys::PointerEvent| {
         if e.button() != 0 {
             return;
@@ -89,94 +91,99 @@ pub fn add_camera_orbit(
 
         let _ = cv.set_pointer_capture(e.pointer_id());
 
-        let mut guard = st.borrow_mut();
-        let st = guard.as_mut().unwrap();
-        st.dragging = true;
+        if let Ok(mut guard) = ci.try_borrow_mut() {
+            let ci = guard.as_mut().unwrap();
+            ci.dragging = true;
 
-        let w = cv.width() as f32;
-        let h = cv.height() as f32;
+            let w = cv.width() as f32;
+            let h = cv.height() as f32;
 
-        // record starting mouse position (canvas‐relative)
-        let mx = (e.client_x() as f32) - w;
-        let my = (e.client_y() as f32) - h;
-        st.last_mouse_pos = (mx, my);
+            // record starting mouse position (canvas‐relative)
+            let mx = (e.client_x() as f32) - w;
+            let my = (e.client_y() as f32) - h;
+            ci.last_mouse_pos = (mx, my);
+        }
 
         // prevent default so canvas doesn’t lose focus
         e.prevent_default();
     });
 
     // ─── MOUSEMOVE ───
-    let st = state.clone();
+    let ci = camera_input.clone();
     let cv = canvas.clone();
     add_listener(&canvas, "pointermove", move |e: web_sys::PointerEvent| {
-        let mut guard = st.borrow_mut();
-        let st = guard.as_mut().unwrap();
+        if let Ok(mut guard) = ci.try_borrow_mut() {
+            let ci = guard.as_mut().unwrap();
 
-        if !st.dragging {
-            return;
+            if !ci.dragging {
+                return;
+            }
+
+            let w = cv.width() as f32;
+            let h = cv.height() as f32;
+
+            // compute delta since last frame
+            let mx = (e.client_x() as f32) - w;
+            let my = (e.client_y() as f32) - h;
+
+            let (lx, ly) = ci.last_mouse_pos;
+            let dx = mx - lx;
+            let dy = my - ly;
+            ci.last_mouse_pos = (mx, my);
+
+            // update camera angles
+            ci.camera.yaw += dx * 0.005;
+            ci.camera.pitch += dy * 0.005;
+
+            // clamp pitch so we don’t flip upside‐down:
+            let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
+            ci.camera.pitch = ci.camera.pitch.clamp(-max_pitch, max_pitch);
         }
-
-        let w = cv.width() as f32;
-        let h = cv.height() as f32;
-
-        // compute delta since last frame
-        let mx = (e.client_x() as f32) - w;
-        let my = (e.client_y() as f32) - h;
-
-        let (lx, ly) = st.last_mouse_pos;
-        let dx = mx - lx;
-        let dy = my - ly;
-        st.last_mouse_pos = (mx, my);
-
-        // update camera angles
-        st.camera.yaw += dx * 0.005;
-        st.camera.pitch += dy * 0.005;
-
-        // clamp pitch so we don’t flip upside‐down:
-        let max_pitch = std::f32::consts::FRAC_PI_2 - 0.01;
-        st.camera.pitch = st.camera.pitch.clamp(-max_pitch, max_pitch);
 
         e.prevent_default();
     });
 
     // ─── MOUSEUP / MOUSELEAVE ───
-    let st = state.clone();
+    let ci = camera_input.clone();
     let cv = canvas.clone();
     add_listener(&canvas, "pointerup", move |e: web_sys::PointerEvent| {
         let _ = cv.release_pointer_capture(e.pointer_id());
 
-        let mut guard = st.borrow_mut();
-        let st = guard.as_mut().unwrap();
-        st.dragging = false;
+        if let Ok(mut guard) = ci.try_borrow_mut() {
+            let ci = guard.as_mut().unwrap();
+            ci.dragging = false;
+        }
     });
 
-    let st = state.clone();
+    let ci = camera_input.clone();
     add_listener(&canvas, "pointerleave", move |_: web_sys::PointerEvent| {
-        let mut guard = st.borrow_mut();
-        let st = guard.as_mut().unwrap();
-        st.dragging = false;
+        if let Ok(mut guard) = ci.try_borrow_mut() {
+            let ci = guard.as_mut().unwrap();
+            ci.dragging = false;
+        }
     });
 
     Ok(())
 }
 
-pub fn add_mousewheel_zoom(state: &Rc<RefCell<Option<GpuState>>>, canvas: &HtmlCanvasElement) -> Result<()> {
-    if state.clone().borrow().is_none() {
+pub fn add_mousewheel_zoom(camera_input: &Rc<RefCell<Option<CameraInput>>>, canvas: &HtmlCanvasElement) -> Result<()> {
+    if camera_input.clone().borrow().is_none() {
         return Err(anyhow!("Gpu state is None"));
     }
 
     assert!(
-        state.clone().borrow().is_some(),
+        camera_input.clone().borrow().is_some(),
         "GpuState is None and somehow passed the guard clause. This should not be possible."
     ); // now I can safely unwrap past this point
 
 
-    let st = state.clone();
+    let ci = camera_input.clone();
     add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
-        let mut guard = st.borrow_mut();
-        let st = guard.as_mut().unwrap();
-        let delta = e.delta_y() as f32 * 0.01;
-        st.camera.distance = (st.camera.distance + delta).clamp(1.0, 50.0);
+        if let Ok(mut guard) = ci.try_borrow_mut() {
+            let ci = guard.as_mut().unwrap();
+            let delta = e.delta_y() as f32 * 0.01;
+            ci.camera.distance = (ci.camera.distance + delta).clamp(1.0, 50.0);
+        }
         e.prevent_default();
     });
 

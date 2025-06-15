@@ -1,19 +1,24 @@
 use gloo_timers::callback::Timeout;
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Set, Show,
+    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show
 };
+use wgpu::wgc::device::queue;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use leptos::view;
 
+use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::utils::FragmentShader;
+use crate::render::renderer::gpu::utils::VertexShader;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::web_gpu;
+use crate::render::web_gpu::{self, reload_pipeline};
 use crate::render::web_gpu::init_wgpu;
 use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;
 use leptos::component;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen_futures::spawn_local;
 
@@ -27,19 +32,31 @@ pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Into
     let canvas_id = "cube-demo-canvas";
 
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
+    let pending = RwSignal::new(None::<(String,String)>);
+
+    let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
 
     let gpu_support = RwSignal::new(true);
     let show_hint = RwSignal::new(true);
 
     {
+        let pending = pending.clone();
+        Effect::new(move |_| {
+            pending.set(Some((vs_src.get(), fs_src.get())));
+        });
+    }
+
+    {
         let state_for_init = state_rc.clone();
         let show_hint_for_init = show_hint.clone();
         let canvas_id = canvas_id.to_string();
+        let camera_rc = camera_rc.clone();
 
         Effect::new(move |_| {
             let state_for_spawn = state_for_init.clone();
             let show_hint = show_hint_for_init.clone();
             let id = canvas_id.clone();
+            let camera_for_spawn = camera_rc.clone();
 
             spawn_local(async move {
                 // 1) wait until the <canvas> actually exists
@@ -66,10 +83,13 @@ pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Into
                 let state_rc = state_for_spawn.clone();          // ← use the outer Rc
                 *state_rc.borrow_mut() = Some(state);      //   put the real state inside
 
-                if let Err(e) = utils::add_camera_orbit(&state_rc, &canvas, show_hint) {
+                let camera_rc = camera_for_spawn.clone();
+                *camera_rc.borrow_mut() = Some(CameraInput::default());
+
+                if let Err(e) = utils::add_camera_orbit(&camera_rc, &canvas, show_hint) {
                     web_sys::console::error_1(&format!("add_camera_orbit failed: {e:?}").into());
                 }
-                if let Err(e) = utils::add_mousewheel_zoom(&state_rc, &canvas) {
+                if let Err(e) = utils::add_mousewheel_zoom(&camera_rc, &canvas) {
                     web_sys::console::error_1(&format!("add_mousewheel_zoom failed: {e:?}").into());
                 }
 
@@ -81,15 +101,34 @@ pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Into
 
                 // now we kick off requestAnimationFrame(…) and draw each frame:
                 *g.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
+
                     // 1) borrow‐and‐render one frame
                     {
                         if state_rc.clone().borrow().is_none() {
                             web_sys::console::error_1(&format!("State is somehow none?").into());
                         }
 
+                        let st = state_rc.clone();
+
+                        if let Some((vs, fs)) = pending.get_untracked() {
+                            spawn_local(async move {
+                                if let Err(msg) = reload_pipeline(&st, &vs, &fs).await {
+                                    // TODO: show failed to compile error to user
+                                    web_sys::console::error_1(&msg.to_string().into());
+                                }
+                            });
+
+                            pending.set(None);
+                        }
+
                         let mut guard = state_rc.borrow_mut();
                         let s = guard.as_mut().unwrap();
-                        s.render();
+
+                        if let Ok(ci_ref) = camera_rc.try_borrow() {
+                            if let Some(ci) = &*ci_ref {
+                                s.render(ci);
+                            }
+                        }
                     }
 
                     // 2) schedule next frame
@@ -105,48 +144,6 @@ pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Into
                     .request_animation_frame(g.borrow().as_ref().unwrap().as_ref().unchecked_ref())
                     .unwrap();
             });
-        });
-    }
-
-    {
-        let vs_src = vs_src.clone();
-        let fs_src = fs_src.clone();
-        let state_for_reload = state_rc.clone();
-
-        // ── debounce + hot-reload on shader source change ------------------------------------
-        Effect::new({
-            // keep the pending Timeout so we can cancel
-            let pending: Rc<RefCell<Option<Timeout>>> = Rc::new(RefCell::new(None));
-
-            move |_| {
-                // reading both signals makes this effect rerun when *either* changes
-                let vs_code = vs_src.get();
-                let fs_code = fs_src.get();
-
-                // cancel previous timer
-                if let Some(t) = pending.borrow_mut().take() {
-                    t.cancel();
-                }
-
-                // set new debounce timer (300 ms)
-                let state_handle = state_for_reload.clone();
-                // TODO: see if debounce is actually necessary because the instant reload is kinad
-                // cool
-                *pending.borrow_mut() = Some(Timeout::new(10, move || {
-                    if let Some(ref mut st) = *state_handle.borrow_mut() {
-                        web_gpu::reload_pipeline(st, &vs_code, &fs_code)
-
-                        // TODO: somehow get errors in here to check if the module is compilable...
-                        // if let Err(err) =
-                        //     web_gpu::reload_pipeline(st, &vs_code, &fs_code)
-                        // {
-                        //     web_sys::console::error_1(
-                        //         &format!("Shader compile failed: {err:?}").into(),
-                        //     );
-                        // }
-                    }
-                }));
-            }
         });
     }
 
