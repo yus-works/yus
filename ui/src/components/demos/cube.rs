@@ -162,7 +162,7 @@ pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Into
             id=canvas_id
             width="800"
             height="600"
-            class="w-full touch-none select-none"
+            class="w-full h-full object-cover touch-none select-none"
           ></canvas>
 
           <Show when=move || show_hint.get()>
