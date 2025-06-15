@@ -64,16 +64,7 @@ pub fn create_uniform_bind_group_layout(sc: &SurfaceContext) -> wgpu::BindGroupL
                 count: None,
             },
 
-            wgpu::BindGroupLayoutEntry {
-                binding:    5,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty:                wgpu::BufferBindingType::Storage { read_only: (true) },
-                    has_dynamic_offset: false,
-                    min_binding_size:   None,
-                },
-                count: None,
-            },
+            simple_ubo_layout_entry!(5, wgpu::ShaderStages::FRAGMENT, 32), // material buffer?
         ],
     })
 }
@@ -114,7 +105,7 @@ pub async fn request_adapter(
     Ok(adapter)
 }
 
-pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Buffer) {
+pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Buffer, wgpu::Buffer) {
     // 2.1 Camera UBO
     let aspect = sc.config.width as f32 / sc.config.height as f32;
     let proj   = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
@@ -147,7 +138,13 @@ pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Bu
         usage:    wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
     });
 
-    (camera_buffer, model_buffer, light_buffer)
+    let material_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Material UBO"),
+        contents: bytemuck::cast_slice(&Mat4::IDENTITY.to_cols_array_2d()),
+        usage:  wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    });
+
+    (camera_buffer, model_buffer, light_buffer, material_buffer)
 }
 
 pub fn create_bind_group(
