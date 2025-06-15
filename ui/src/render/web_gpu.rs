@@ -1,9 +1,12 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use anyhow::anyhow;
 use anyhow::Result;
 
 use wgpu::util::DeviceExt;
 
 use web_sys::HtmlCanvasElement;
-use crate::render::renderer::camera::Camera;
 use crate::render::renderer::gpu::utils::*;
 use crate::render::renderer::instance::InstanceRaw;
 use glam::Mat4;
@@ -15,28 +18,61 @@ use super::renderer::gpu::gpu_state::GpuState;
 use super::renderer::gpu::resource_context::ResourceContext;
 use super::renderer::gpu::surface_context::SurfaceContext;
 
-pub fn reload_pipeline(state: &mut GpuState, vs_src: &str, fs_src: &str) {
+pub async fn reload_pipeline(
+    state: &Rc<RefCell<Option<GpuState>>>,
+    vs_src: &str,
+    fs_src: &str,
+) -> anyhow::Result<()> {
     use std::borrow::Cow;
 
-    let vs = state.surface_context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("live VS shader"),
-        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(vs_src)),
-    });
+    if state.clone().borrow().is_none() {
+        return Err(anyhow!("Gpu state is None"));
+    }
 
-    let fs = state.surface_context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("live FS shader"),
-        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(fs_src)),
-    });
+    assert!(
+        state.clone().borrow().is_some(),
+        "GpuState is None and somehow passed the guard clause. This should not be possible."
+    ); // now I can safely unwrap past this point
 
-    state.pipeline = create_pipeline(
-        &state.surface_context.device,
-        &state.surface_context.config,
-        &state.resource_context.bind_group_layout,
-        &VertexShader(vs),
-        &FragmentShader(fs)
-    );
+    if let Ok(mut guard) = state.try_borrow_mut() {
+        let st = guard.as_mut().unwrap();
+
+        let device  = &st.surface_context.device;
+        let config  = &st.surface_context.config;
+        let layout  = &st.resource_context.bind_group_layout;
+
+        // ── 1️⃣  Start an error-scope that captures *validation* errors ─────────────
+        device.push_error_scope(wgpu::ErrorFilter::Validation);
+
+        // ── 2️⃣  Compile the two WGSL modules and rebuild the pipeline ─────────────
+        let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label:  Some("live VS shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(vs_src)),
+        });
+
+        let fs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label:  Some("live FS shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(fs_src)),
+        });
+
+        let new_pipeline = create_pipeline(device, config, layout, &VertexShader(vs), &FragmentShader(fs));
+
+        // ── 3️⃣  Pop the scope and check if anything went wrong ───────────────────
+        return match device.pop_error_scope().await {
+            None => {
+                // ✅  All good – swap in the fresh pipeline
+                st.pipeline = new_pipeline;
+                Ok(())
+            }
+            Some(err) => {
+                // ❌  WGSL or pipeline validation failed – keep the old pipeline
+                Err(anyhow!(err.to_string()))
+            }
+        }
+    } else {
+        Err(anyhow!("oh no"))
+    }
 }
-
 
 pub fn create_pipeline(
     device: &wgpu::Device,
@@ -154,10 +190,6 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         instance_count,
 
         start_time: web_sys::window().unwrap().performance().unwrap().now(),
-
-        camera: Camera::default(),
-        dragging: false,
-        last_mouse_pos: (0.0, 0.0),
 
         depth_view,
     })
