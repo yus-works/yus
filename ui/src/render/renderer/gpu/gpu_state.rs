@@ -1,9 +1,9 @@
-use glam::{Mat4, Vec3};
+use glam::Mat4;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
-use crate::render::renderer::camera::Camera;
+use crate::render::renderer::camera_input::CameraInput;
 
-use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
+use super::{resource_context::ResourceContext, surface_context::SurfaceContext, utils::{FragmentShader, VertexShader}};
 
 pub struct GpuState {
     pub surface_context: SurfaceContext,
@@ -17,10 +17,6 @@ pub struct GpuState {
     pub instance_count: u32,
 
     pub start_time: f64,
-
-    pub camera: Camera,
-    pub dragging: bool,
-    pub last_mouse_pos: (f32, f32),
 
     pub depth_view: wgpu::TextureView,
 }
@@ -63,7 +59,7 @@ impl GpuState {
         rpass.draw_indexed(0..self.num_indices, 0, 0..self.instance_count);
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, camera_input: &CameraInput) {
         // 1) state already ready
 
         // 2) acquire next frame
@@ -74,18 +70,9 @@ impl GpuState {
         let mut encoder = self.surface_context.device.create_command_encoder(&Default::default());
         self.render_pass(&mut encoder, view);
 
-        let yaw = self.camera.yaw;
-        let pitch = self.camera.pitch;
-
-        self.camera.eye = Vec3::new(
-            self.camera.distance * yaw.cos() * pitch.cos(),
-            self.camera.distance * pitch.sin(),
-            self.camera.distance * yaw.sin() * pitch.cos(),
-        ) + self.camera.target;
-
         let aspect = self.resolution().0 as f32 / self.resolution().1 as f32;
         let proj = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
-        let view = Mat4::look_at_rh(self.camera.eye, self.camera.target, self.camera.up);
+        let view = Mat4::look_at_rh(camera_input.camera.eye(), camera_input.camera.target, camera_input.camera.up);
 
         let view_proj = proj * view;
 
