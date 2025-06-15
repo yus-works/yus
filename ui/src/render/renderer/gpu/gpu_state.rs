@@ -1,3 +1,4 @@
+use bytemuck::{Pod, Zeroable};
 use glam::Mat4;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
@@ -16,7 +17,9 @@ pub struct GpuState {
     pub instance_buffer: wgpu::Buffer,
     pub instance_count: u32,
 
-    pub start_time: f64,
+    pub start_ms: f64,
+    pub prev_ms: f64, // since last frame
+    pub frame_counter: u32,
 
     pub depth_view: wgpu::TextureView,
 }
@@ -81,6 +84,37 @@ impl GpuState {
             0,
             bytemuck::cast_slice(&view_proj.to_cols_array_2d()),
         );
+
+        #[repr(C)]
+        #[derive(Copy, Clone, Pod, Zeroable)]
+        struct TimeUBO {
+            millis:     u32,
+            secs:       u32,
+            dt_ms:      u32,
+            frame_id:   u32,
+        }
+
+        // ── time maths ────────────────────────────────
+        let now_ms = web_sys::window().unwrap().performance().unwrap().now();
+        let dt_ms  = (now_ms - self.prev_ms) as u32;          // u32 fits 49 days
+        let secs   = (now_ms / 1000.0) as u32;
+        let millis = (now_ms as u32) % 1000;
+
+        let payload = TimeUBO {
+            millis,
+            secs,
+            dt_ms,
+            frame_id : self.frame_counter,
+        };
+
+        self.surface_context.queue.write_buffer(
+            &self.resource_context.time_ubo,          // add field in struct
+            0,
+            bytemuck::bytes_of(&payload) // 16-byte vec4
+        );
+
+        self.frame_counter += 1;
+        self.prev_ms = now_ms;
 
         // 4) submit + present
         self.surface_context.queue.submit(Some(encoder.finish()));

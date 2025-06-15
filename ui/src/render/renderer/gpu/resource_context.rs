@@ -5,6 +5,7 @@ pub struct ResourceContext {
     pub model_ubo: wgpu::Buffer,
     pub light_ubo: wgpu::Buffer,
     pub material_ubo: wgpu::Buffer,
+    pub time_ubo: wgpu::Buffer,
 
     pub texture_view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
@@ -14,7 +15,7 @@ pub struct ResourceContext {
 
 impl ResourceContext {
     pub async fn new_async(sc: &SurfaceContext) -> Self {
-        let (camera_ubo, model_ubo, light_ubo, material_ubo) = create_ubos(&sc);
+        let (camera_ubo, model_ubo, light_ubo, material_ubo, time_ubo) = create_ubos(&sc);
         let (texture_view, sampler) = load_texture(&sc);
         let bind_group_layout = create_uniform_bind_group_layout(&sc);
 
@@ -31,6 +32,8 @@ impl ResourceContext {
             &model_ubo,
             &light_ubo,
             &material_ubo,
+            &time_ubo,
+
             &texture_view,
             &sampler
         );
@@ -40,6 +43,7 @@ impl ResourceContext {
             model_ubo,
             light_ubo,
             material_ubo,
+            time_ubo,
 
             texture_view,
             sampler,

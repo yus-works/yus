@@ -178,6 +178,8 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
     });
     let instance_count = instances.len() as u32;
 
+    let t0 = web_sys::window().unwrap().performance().unwrap().now();
+
     Ok(GpuState {
         surface_context: sc,
         resource_context: rc,
@@ -189,7 +191,9 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         instance_buffer,
         instance_count,
 
-        start_time: web_sys::window().unwrap().performance().unwrap().now(),
+        start_ms: t0,
+        prev_ms: t0,
+        frame_counter: 0,
 
         depth_view,
     })
