@@ -12,9 +12,7 @@ use leptos::{IntoView, component, view};
 use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
 
-use crate::render::renderer::camera_input;
 use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::GpuState;
 
 #[component]
 pub fn WebGPUNotSupportedMsg() -> impl IntoView {

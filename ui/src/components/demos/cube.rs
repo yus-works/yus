@@ -1,24 +1,19 @@
-use gloo_timers::callback::Timeout;
-use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::{
     ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show
 };
-use wgpu::wgc::device::queue;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use leptos::view;
 
 use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::utils::FragmentShader;
-use crate::render::renderer::gpu::utils::VertexShader;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::web_gpu::{self, reload_pipeline};
+use crate::render::web_gpu::reload_pipeline;
 use crate::render::web_gpu::init_wgpu;
 use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;
 use leptos::component;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen_futures::spawn_local;
 

@@ -3,10 +3,8 @@ use leptos::prelude::ElementChild;
 use leptos::prelude::ClassAttribute;
 use crate::routes::RoutesMenu;
 use leptos_router::components::Router;
-use leptos_router::components::A;
 
 use leptos_meta::provide_meta_context;
-use leptos_meta::Stylesheet;
 
 #[component]
 pub fn App() -> impl IntoView {

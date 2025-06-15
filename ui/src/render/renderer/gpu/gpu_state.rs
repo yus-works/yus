@@ -3,7 +3,7 @@ use wgpu::{CommandEncoder, StoreOp, TextureView};
 
 use crate::render::renderer::camera_input::CameraInput;
 
-use super::{resource_context::ResourceContext, surface_context::SurfaceContext, utils::{FragmentShader, VertexShader}};
+use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
 pub struct GpuState {
     pub surface_context: SurfaceContext,

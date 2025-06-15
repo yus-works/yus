@@ -1,4 +1,4 @@
-use super::{surface_context::SurfaceContext, utils::{create_bind_group, create_material_buffer, create_ubos, create_uniform_bind_group_layout, load_texture}};
+use super::{surface_context::SurfaceContext, utils::{create_bind_group, create_ubos, create_uniform_bind_group_layout, load_texture}};
 
 pub struct ResourceContext {
     pub camera_ubo: wgpu::Buffer,
