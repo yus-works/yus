@@ -163,8 +163,10 @@ pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Into
                           bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
                           transition-opacity duration-500
                           group-hover:opacity-0">
-                "✋"
-                <p>"Click & drag – scroll to zoom"</p>
+                ""
+                <p>"Click & drag to rotate camera ✋"</p>
+                <p>"Scroll or pinch to zoom 🖱️/🤏"</p>
+                <strong>"Click to hide this hint"</strong>
               </div>
           </Show>
 
