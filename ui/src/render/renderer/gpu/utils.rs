@@ -1,7 +1,7 @@
 use std::{fs, num::{NonZeroU32, NonZeroU64}, ops::Deref};
 use anyhow::{Context, Result};
 use glam::{Mat4, Vec3};
-use wgpu::{util::DeviceExt, SurfaceTarget};
+use wgpu::{util::DeviceExt, Limits, SurfaceTarget};
 use crate::web_sys::HtmlCanvasElement;
 
 use super::surface_context::SurfaceContext;
@@ -82,11 +82,7 @@ pub async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wg
     adapter.request_device(&wgpu::DeviceDescriptor {
         label: None,
         required_features: wgpu::Features::empty(),
-        required_limits: if cfg!(target_arch = "wasm32") {
-            wgpu::Limits::downlevel_webgl2_defaults()
-        } else {
-            wgpu::Limits::default()
-        },
+        required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
         memory_hints: wgpu::MemoryHints::default(),
         trace: wgpu::Trace::Off,
     }).await.context("Failed to request device")

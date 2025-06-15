@@ -13,7 +13,13 @@ pub struct SurfaceContext {
 
 impl SurfaceContext {
     pub async fn new_async(canvas: &HtmlCanvasElement) -> Result<Self> {
-        let instance = wgpu::Instance::default();
+        let instance_desc = wgpu::InstanceDescriptor {
+                backends: wgpu::Backends::BROWSER_WEBGPU | wgpu::Backends::GL,
+                ..Default::default()
+        };
+
+        let instance = wgpu::Instance::new(&instance_desc);
+
         let surface = create_surface_static(&instance, canvas)?;
 
         let adapter = request_adapter(&instance, &surface).await?;
