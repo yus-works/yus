@@ -1,5 +1,5 @@
 use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show,
+    ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Set, Show,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -8,130 +8,10 @@ use leptos::view;
 
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::web_gpu::init_wgpu;
-use crate::render::web_gpu::reload_pipeline;
-use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;
 use leptos::component;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::prelude::Closure;
-use wasm_bindgen_futures::spawn_local;
-
 use super::utils;
-use web_sys;
 
-use gloo_timers::future::TimeoutFuture;
-
-fn register_canvas(
-    state_rc: Rc<RefCell<Option<GpuState>>>,
-    camera_rc: Rc<RefCell<Option<CameraInput>>>,
-
-    show_hint: RwSignal<bool>,
-    gpu_support: RwSignal<bool>,
-    pending: RwSignal<Option<(String, String)>>,
-
-    canvas_id: &str,
-) {
-        let state_for_init = state_rc.clone();
-        let show_hint_for_init = show_hint.clone();
-        let canvas_id = canvas_id.to_string();
-        let camera_rc = camera_rc.clone();
-
-        Effect::new(move |_| {
-            let state_for_spawn = state_for_init.clone();
-            let show_hint = show_hint_for_init.clone();
-            let id = canvas_id.clone();
-            let camera_for_spawn = camera_rc.clone();
-
-            spawn_local(async move {
-                // 1) wait until the <canvas> actually exists
-                TimeoutFuture::new(0).await;
-
-                // 2) grab the DOM canvas
-                let document = web_sys::window().unwrap().document().unwrap();
-                let canvas: HtmlCanvasElement = document
-                    .get_element_by_id(&id)
-                    .expect("canvas not in DOM yet")
-                    .dyn_into::<HtmlCanvasElement>()
-                    .expect("element is not a canvas");
-
-                // 3) init WGPU with that canvas
-                let state = match init_wgpu(&canvas).await {
-                    Ok(s) => s,
-                    Err(err) => {
-                        gpu_support.set(false);
-                        web_sys::console::error_1(&format!("WGPU init failed: {:?}", err).into());
-                        return;
-                    }
-                };
-
-                let state_rc = state_for_spawn.clone();
-                *state_rc.borrow_mut() = Some(state);
-
-                let camera_rc = camera_for_spawn.clone();
-                *camera_rc.borrow_mut() = Some(CameraInput::default());
-
-                if let Err(e) = utils::add_camera_orbit(&camera_rc, &canvas, show_hint) {
-                    web_sys::console::error_1(&format!("add_camera_orbit failed: {e:?}").into());
-                }
-                if let Err(e) = utils::add_mousewheel_zoom(&camera_rc, &canvas) {
-                    web_sys::console::error_1(&format!("add_mousewheel_zoom failed: {e:?}").into());
-                }
-
-                // ───  RENDER LOOP ────────────────────────────────────────────────────────────────
-
-                // we’ll store the RAF callback so we can re‐schedule it each frame
-                let f: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
-                let g = f.clone();
-
-                // now we kick off requestAnimationFrame(…) and draw each frame:
-                *g.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
-                    // 1) borrow‐and‐render one frame
-                    {
-                        if state_rc.clone().borrow().is_none() {
-                            web_sys::console::error_1(&format!("State is somehow none?").into());
-                        }
-
-                        let st = state_rc.clone();
-
-                        if let Some((vs, fs)) = pending.get_untracked() {
-                            spawn_local(async move {
-                                if let Err(msg) = reload_pipeline(&st, &vs, &fs).await {
-                                    // TODO: show failed to compile error to user
-                                    web_sys::console::error_1(&msg.to_string().into());
-                                }
-                            });
-
-                            pending.set(None);
-                        }
-
-                        let mut guard = state_rc.borrow_mut();
-                        let s = guard.as_mut().unwrap();
-
-                        if let Ok(ci_ref) = camera_rc.try_borrow() {
-                            if let Some(ci) = &*ci_ref {
-                                s.render(ci);
-                            }
-                        }
-                    }
-
-                    // 2) schedule next frame
-                    web_sys::window()
-                        .unwrap()
-                        .request_animation_frame(
-                            f.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
-                        )
-                        .unwrap();
-                }) as Box<dyn FnMut(f64)>));
-
-                // initial kick
-                web_sys::window()
-                    .unwrap()
-                    .request_animation_frame(g.borrow().as_ref().unwrap().as_ref().unchecked_ref())
-                    .unwrap();
-            });
-        });
-}
 
 #[component]
 pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
@@ -152,7 +32,7 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
         });
     }
 
-    register_canvas(state_rc, camera_rc, show_hint, gpu_support, pending, canvas_id);
+    utils::register_canvas(state_rc, camera_rc, show_hint, gpu_support, pending, canvas_id);
 
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.
     view! {
