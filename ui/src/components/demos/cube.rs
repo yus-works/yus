@@ -22,26 +22,16 @@ use web_sys;
 
 use gloo_timers::future::TimeoutFuture;
 
-#[component]
-pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
-    let canvas_id = "cube-demo-canvas";
+fn register_canvas(
+    state_rc: Rc<RefCell<Option<GpuState>>>,
+    camera_rc: Rc<RefCell<Option<CameraInput>>>,
 
-    let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
-    let pending = RwSignal::new(None::<(String, String)>);
+    show_hint: RwSignal<bool>,
+    gpu_support: RwSignal<bool>,
+    pending: RwSignal<Option<(String, String)>>,
 
-    let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
-
-    let gpu_support = RwSignal::new(true);
-    let show_hint = RwSignal::new(true);
-
-    {
-        let pending = pending.clone();
-        Effect::new(move |_| {
-            pending.set(Some((vs_src.get(), fs_src.get())));
-        });
-    }
-
-    {
+    canvas_id: &str,
+) {
         let state_for_init = state_rc.clone();
         let show_hint_for_init = show_hint.clone();
         let canvas_id = canvas_id.to_string();
@@ -141,7 +131,28 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
                     .unwrap();
             });
         });
+}
+
+#[component]
+pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
+    let canvas_id = "cube-demo-canvas";
+
+    let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
+    let pending = RwSignal::new(None::<(String, String)>);
+
+    let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
+
+    let gpu_support = RwSignal::new(true);
+    let show_hint = RwSignal::new(true);
+
+    {
+        let pending = pending.clone();
+        Effect::new(move |_| {
+            pending.set(Some((vs_src.get(), fs_src.get())));
+        });
     }
+
+    register_canvas(state_rc, camera_rc, show_hint, gpu_support, pending, canvas_id);
 
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.
     view! {
