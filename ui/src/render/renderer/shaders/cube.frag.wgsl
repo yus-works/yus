@@ -33,7 +33,9 @@ fn fs_main(in : FSIn) -> @location(0) vec4<f32> {
 
     let s = time_sec();
 
-    let tex  = textureSample(texture_data, texture_sampler, in.uv * s);
+    let tex  = textureSample(
+        texture_data, texture_sampler, in.uv * sin(s)
+    );
 
     let ambient = 0.5;
     let lit     = tex.rgb * (ambient + diff * light.color);
