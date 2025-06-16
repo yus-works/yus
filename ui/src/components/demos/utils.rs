@@ -16,8 +16,9 @@ use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
 
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::renderer::vertex;
+use crate::render::renderer::mesh::CpuMesh;
 use crate::render::web_gpu::init_wgpu;
 use crate::render::web_gpu::reload_pipeline;
 
@@ -195,7 +196,7 @@ pub fn add_mousewheel_zoom(camera_input: &Rc<RefCell<Option<CameraInput>>>, canv
     Ok(())
 }
 
-pub fn register_canvas(
+pub fn start_rendering(
     state_rc: Rc<RefCell<Option<GpuState>>>,
     camera_rc: Rc<RefCell<Option<CameraInput>>>,
 
@@ -204,6 +205,9 @@ pub fn register_canvas(
     pending: RwSignal<Option<(String, String)>>,
 
     canvas_id: &str,
+
+    mesh: Rc<RefCell<CpuMesh<'static>>>,
+    projection: Rc<RefCell<Projection>>,
 ) {
         let state_for_init = state_rc.clone();
         let show_hint_for_init = show_hint.clone();
@@ -215,6 +219,8 @@ pub fn register_canvas(
             let show_hint = show_hint_for_init.clone();
             let id = canvas_id.clone();
             let camera_for_spawn = camera_rc.clone();
+            let mesh_rc = mesh.clone();
+            let proj_rc = projection.clone();
 
             spawn_local(async move {
                 // 1) wait until the <canvas> actually exists
@@ -243,9 +249,6 @@ pub fn register_canvas(
 
                 let camera_rc = camera_for_spawn.clone();
                 *camera_rc.borrow_mut() = Some(CameraInput::default());
-
-
-
 
                 if let Err(e) = add_camera_orbit(&camera_rc, &canvas, show_hint) {
                     web_sys::console::error_1(&format!("add_camera_orbit failed: {e:?}").into());
@@ -286,7 +289,7 @@ pub fn register_canvas(
 
                         if let Ok(ci_ref) = camera_rc.try_borrow() {
                             if let Some(ci) = &*ci_ref {
-                                s.render(ci);
+                                s.render(ci, &mesh_rc.borrow(), &proj_rc.borrow());
                             }
                         }
                     }

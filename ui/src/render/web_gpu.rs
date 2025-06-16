@@ -7,6 +7,7 @@ use anyhow::Result;
 use wgpu::util::DeviceExt;
 
 use web_sys::HtmlCanvasElement;
+use crate::meshes;
 use crate::render::renderer::gpu::utils::*;
 use crate::render::renderer::instance::InstanceRaw;
 use glam::Mat4;
@@ -163,10 +164,10 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
 
     let t0 = web_sys::window().unwrap().performance().unwrap().now();
 
-    let vertex_buffer = create_vert_buff(&sc, vertex::QUAD_VERTS);
-    let index_buffer = create_idx_buff(&sc, vertex::QUAD_INDICES);
-
-    let num_indices = vertex::QUAD_INDICES.len() as u32;
+    // render quad by default
+    let vertex_buffer = create_vert_buff(&sc, meshes::quad::QUAD_VERTS);
+    let index_buffer = create_idx_buff(&sc, meshes::quad::QUAD_INDICES);
+    let num_indices = meshes::quad::QUAD_INDICES.len() as u32;
 
     Ok(GpuState {
         surface_context: sc,

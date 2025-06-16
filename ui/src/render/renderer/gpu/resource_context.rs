@@ -19,11 +19,11 @@ impl ResourceContext {
         let (texture_view, sampler) = load_texture(&sc);
         let bind_group_layout = create_uniform_bind_group_layout(&sc);
 
-        let colours = [
-            [1.0, 0.0, 0.0, 1.0],   // red cube
-            [0.0, 1.0, 0.0, 1.0],   // green cube
-            [0.0, 0.0, 1.0, 1.0],   // blue cube
-        ];
+        // let colours = [
+        //     [1.0, 0.0, 0.0, 1.0],   // red cube
+        //     [0.0, 1.0, 0.0, 1.0],   // green cube
+        //     [0.0, 0.0, 1.0, 1.0],   // blue cube
+        // ];
 
         let bind_group = create_bind_group(
             &sc.device,

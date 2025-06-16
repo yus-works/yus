@@ -3,7 +3,7 @@ use wgpu::util::DeviceExt;
 use glam::Mat4;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
-use crate::render::renderer::{camera_input::CameraInput, vertex::Vertex};
+use crate::render::renderer::{camera_input::CameraInput, mesh::CpuMesh, vertex::Vertex};
 
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
@@ -33,12 +33,26 @@ pub fn create_vert_buff(sc: &SurfaceContext, vertices: &[Vertex]) -> wgpu::Buffe
     })
 }
 
-pub fn create_idx_buff(sc: &SurfaceContext, indicies: &[u16]) -> wgpu::Buffer {
+pub fn create_idx_buff(sc: &SurfaceContext, indices: &[u16]) -> wgpu::Buffer {
     sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Index Buffer"),
-        contents: bytemuck::cast_slice(indicies),
+        contents: bytemuck::cast_slice(indices),
         usage: wgpu::BufferUsages::INDEX,
     })
+}
+
+pub enum Projection {
+    /// Full-screen clip-space quad
+    FlatQuad,
+
+    /// Perspective camera pointed at a 3-D mesh
+    Fulcrum,
+
+    /// 2-D screen units -> clip space (top-left = (0,0))
+    Ortho2D { width: f32, height: f32 },
+
+    /// Caller supplies their own matrix
+    Custom(Mat4),
 }
 
 impl GpuState {
@@ -46,8 +60,8 @@ impl GpuState {
         self.vertex_buffer = create_vert_buff(&self.surface_context, vertices);
     }
 
-    pub fn set_indicies(&mut self, indicies: &[u16]) {
-        self.index_buffer = create_idx_buff(&self.surface_context, indicies)
+    pub fn set_indicies(&mut self, indices: &[u16]) {
+        self.index_buffer = create_idx_buff(&self.surface_context, indices)
     }
 
     pub fn resolution(&self) -> (f32, f32) {
@@ -87,7 +101,7 @@ impl GpuState {
         rpass.draw_indexed(0..self.num_indices, 0, 0..self.instance_count);
     }
 
-    pub fn render(&mut self, camera_input: &CameraInput) {
+    pub fn render(&mut self, camera_input: &CameraInput, mesh: &CpuMesh, projection: &Projection) {
         // 1) state already ready
 
         // 2) acquire next frame
@@ -98,11 +112,30 @@ impl GpuState {
         let mut encoder = self.surface_context.device.create_command_encoder(&Default::default());
         self.render_pass(&mut encoder, view);
 
-        let aspect = self.resolution().0 as f32 / self.resolution().1 as f32;
-        let proj = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
-        let view = Mat4::look_at_rh(camera_input.camera.eye(), camera_input.camera.target, camera_input.camera.up);
+        let sc = &self.surface_context;
 
-        let view_proj = proj * view;
+        self.vertex_buffer = create_vert_buff(sc, mesh.vertices);
+        self.index_buffer = create_idx_buff(sc, mesh.indices);
+        self.num_indices = mesh.index_count;
+
+        let view_proj = match projection {
+            &Projection::FlatQuad => Mat4::IDENTITY,
+            &Projection::Custom(m) => m,
+            &Projection::Ortho2D { width, height } => {
+                Mat4::orthographic_rh_gl(
+                    0.0, width,
+                    height, 0.0,
+                    -1.0, 1.0,
+                )
+            }
+            &Projection::Fulcrum => {
+                let aspect = self.resolution().0 as f32 / self.resolution().1 as f32;
+                let proj = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
+                let view = Mat4::look_at_rh(camera_input.camera.eye(), camera_input.camera.target, camera_input.camera.up);
+
+                proj * view
+            }
+        };
 
         self.surface_context.queue.write_buffer(
             &self.resource_context.camera_ubo,

@@ -6,9 +6,11 @@ use std::rc::Rc;
 
 use leptos::view;
 
+use crate::meshes;
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::renderer::vertex;
+use crate::render::renderer::mesh::CpuMesh;
 use leptos::IntoView;
 use leptos::component;
 use super::utils;
@@ -33,7 +35,21 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
         });
     }
 
-    utils::register_canvas(state_rc, camera_rc, show_hint, gpu_support, pending, canvas_id);
+    let mesh = CpuMesh::new(
+        meshes::cube::CUBE_VERTICES,
+        meshes::cube::CUBE_INDICES,
+    );
+
+    let mesh = Rc::new(RefCell::new(mesh));
+
+    let proj = Rc::new(RefCell::new(Projection::Fulcrum));
+
+    utils::start_rendering(
+        state_rc, camera_rc,
+        show_hint, gpu_support,
+        pending, canvas_id,
+        mesh, proj
+    );
 
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.
     view! {
