@@ -23,7 +23,7 @@ use web_sys;
 use gloo_timers::future::TimeoutFuture;
 
 #[component]
-pub fn CubeDemo(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
+pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
     let canvas_id = "cube-demo-canvas";
 
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));

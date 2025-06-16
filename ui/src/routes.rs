@@ -9,7 +9,7 @@ use leptos::component;
 
 use crate::components::{
   demos_menu::DemosMenu,
-  demos::cube::CubeDemo,
+  // demos::cube::CubeDemo,
 };
 
 use crate::pages::{

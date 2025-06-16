@@ -7,8 +7,6 @@ use leptos::{IntoView, component};
 
 use crate::components::demos::shader_editor::ShaderEditor;
 
-use crate::components::demos::cube::CubeDemo;
-
 #[component]
 fn Hero() -> impl IntoView {
     view! {
