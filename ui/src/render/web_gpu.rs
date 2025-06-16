@@ -25,52 +25,47 @@ pub async fn reload_pipeline(
 ) -> anyhow::Result<()> {
     use std::borrow::Cow;
 
-    if state.clone().borrow().is_none() {
-        return Err(anyhow!("Gpu state is None"));
-    }
+    let (device, config, layout) = {
+        let guard = state
+            .try_borrow()
+            .map_err(|_| anyhow!("GpuState busy"))?;
 
-    assert!(
-        state.clone().borrow().is_some(),
-        "GpuState is None and somehow passed the guard clause. This should not be possible."
-    ); // now I can safely unwrap past this point
+        let st = guard.as_ref().ok_or(anyhow!("GpuState is None"))?;
 
-    if let Ok(mut guard) = state.try_borrow_mut() {
-        let st = guard.as_mut().unwrap();
+        (
+            st.surface_context.device.clone(),
+            st.surface_context.config.clone(),
+            st.resource_context
+                .bind_group_layout
+                .clone(),
+        )
+    }; // guard dropped
 
-        let device  = &st.surface_context.device;
-        let config  = &st.surface_context.config;
-        let layout  = &st.resource_context.bind_group_layout;
+    device.push_error_scope(wgpu::ErrorFilter::Validation);
 
-        // ── 1️⃣  Start an error-scope that captures *validation* errors ─────────────
-        device.push_error_scope(wgpu::ErrorFilter::Validation);
+    let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label:  Some("live VS shader"),
+        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(vs_src)),
+    });
 
-        // ── 2️⃣  Compile the two WGSL modules and rebuild the pipeline ─────────────
-        let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label:  Some("live VS shader"),
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(vs_src)),
-        });
+    let fs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label:  Some("live FS shader"),
+        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(fs_src)),
+    });
 
-        let fs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label:  Some("live FS shader"),
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(fs_src)),
-        });
+    let new_pipeline = create_pipeline(&device, &config, &layout, &VertexShader(vs), &FragmentShader(fs));
 
-        let new_pipeline = create_pipeline(device, config, layout, &VertexShader(vs), &FragmentShader(fs));
-
-        // ── 3️⃣  Pop the scope and check if anything went wrong ───────────────────
-        return match device.pop_error_scope().await {
-            None => {
-                // ✅  All good – swap in the fresh pipeline
-                st.pipeline = new_pipeline;
-                Ok(())
+    // await after every borrow has been let go
+    match device.pop_error_scope().await {
+        None => {
+            if let Ok(mut guard) = state.try_borrow_mut() { // only then do mutable borrow
+                if let Some(st) = guard.as_mut() {
+                    st.pipeline = new_pipeline;
+                }
             }
-            Some(err) => {
-                // ❌  WGSL or pipeline validation failed – keep the old pipeline
-                Err(anyhow!(err.to_string()))
-            }
+            Ok(())
         }
-    } else {
-        Err(anyhow!("oh no"))
+        Some(err) => Err(anyhow!(err.to_string())),
     }
 }
 
