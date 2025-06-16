@@ -36,7 +36,7 @@ pub const QUAD_INDICES: &[u16] = &[
 ];
 
 // 24 vertices (4 per face) so each face can have its own normal and UV coords
-pub const VERTICES: &[Vertex] = &[
+pub const CUBE_VERTICES: &[Vertex] = &[
     // +X face
     Vertex { position: [ 1., -1., -1.], normal: [1., 0., 0.], uv: [0.0, 0.0] },
     Vertex { position: [ 1.,  1., -1.], normal: [1., 0., 0.], uv: [0.0, 1.0] },
@@ -75,7 +75,7 @@ pub const VERTICES: &[Vertex] = &[
 ];
 
 // 6 faces × 2 triangles × 3 indices = 36
-pub const INDICES: &[u16] = &[
+pub const CUBE_INDICES: &[u16] = &[
      0,  1,  2,  0,  2,  3,   // +X
      4,  5,  6,  4,  6,  7,   // -X
      8,  9, 10,  8, 10, 11,   // +Y

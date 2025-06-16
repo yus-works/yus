@@ -17,6 +17,7 @@ use web_sys::HtmlCanvasElement;
 
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
+use crate::render::renderer::vertex;
 use crate::render::web_gpu::init_wgpu;
 use crate::render::web_gpu::reload_pipeline;
 
@@ -242,6 +243,9 @@ pub fn register_canvas(
 
                 let camera_rc = camera_for_spawn.clone();
                 *camera_rc.borrow_mut() = Some(CameraInput::default());
+
+
+
 
                 if let Err(e) = add_camera_orbit(&camera_rc, &canvas, show_hint) {
                     web_sys::console::error_1(&format!("add_camera_orbit failed: {e:?}").into());

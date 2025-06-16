@@ -14,6 +14,8 @@ use glam::Vec3;
 use crate::render::renderer::vertex;
 use web_sys;
 
+use super::renderer::gpu::gpu_state::create_idx_buff;
+use super::renderer::gpu::gpu_state::create_vert_buff;
 use super::renderer::gpu::gpu_state::GpuState;
 use super::renderer::gpu::resource_context::ResourceContext;
 use super::renderer::gpu::surface_context::SurfaceContext;
@@ -143,20 +145,6 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
     let pipeline = create_pipeline(&sc.device, &sc.config, &rc.bind_group_layout, &vs_module, &fs_module);
     let depth_view = create_depth_view(&sc.device, &sc.config);
 
-    let vertex_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Cube Vertex Buffer"),
-        contents: bytemuck::cast_slice(vertex::VERTICES),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
-
-    let index_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Cube Index Buffer"),
-        contents: bytemuck::cast_slice(vertex::INDICES),
-        usage: wgpu::BufferUsages::INDEX,
-    });
-
-    let num_indices = vertex::INDICES.len() as u32;
-
     let translations = [
         Vec3::ZERO,
     ];
@@ -174,6 +162,11 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
     let instance_count = instances.len() as u32;
 
     let t0 = web_sys::window().unwrap().performance().unwrap().now();
+
+    let vertex_buffer = create_vert_buff(&sc, vertex::QUAD_VERTS);
+    let index_buffer = create_idx_buff(&sc, vertex::QUAD_INDICES);
+
+    let num_indices = vertex::QUAD_INDICES.len() as u32;
 
     Ok(GpuState {
         surface_context: sc,

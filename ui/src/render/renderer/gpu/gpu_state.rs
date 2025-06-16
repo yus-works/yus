@@ -1,8 +1,9 @@
 use bytemuck::{Pod, Zeroable};
+use wgpu::util::DeviceExt;
 use glam::Mat4;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
-use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::{camera_input::CameraInput, vertex::Vertex};
 
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
@@ -24,7 +25,31 @@ pub struct GpuState {
     pub depth_view: wgpu::TextureView,
 }
 
+pub fn create_vert_buff(sc: &SurfaceContext, vertices: &[Vertex]) -> wgpu::Buffer {
+    sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Vertex Buffer"),
+        contents: bytemuck::cast_slice(vertices),
+        usage: wgpu::BufferUsages::VERTEX,
+    })
+}
+
+pub fn create_idx_buff(sc: &SurfaceContext, indicies: &[u16]) -> wgpu::Buffer {
+    sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Index Buffer"),
+        contents: bytemuck::cast_slice(indicies),
+        usage: wgpu::BufferUsages::INDEX,
+    })
+}
+
 impl GpuState {
+    pub fn set_vertices(&mut self, vertices: &[Vertex]) {
+        self.vertex_buffer = create_vert_buff(&self.surface_context, vertices);
+    }
+
+    pub fn set_indicies(&mut self, indicies: &[u16]) {
+        self.index_buffer = create_idx_buff(&self.surface_context, indicies)
+    }
+
     pub fn resolution(&self) -> (f32, f32) {
         (self.surface_context.config.width as f32, self.surface_context.config.height as f32)
     }

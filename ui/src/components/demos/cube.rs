@@ -8,6 +8,7 @@ use leptos::view;
 
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
+use crate::render::renderer::vertex;
 use leptos::IntoView;
 use leptos::component;
 use super::utils;
