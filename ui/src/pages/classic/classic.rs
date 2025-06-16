@@ -1,3 +1,4 @@
+use leptos::prelude::{Effect, Get, Set};
 use leptos::prelude::ElementChild;
 use leptos::prelude::GlobalAttributes;
 use leptos::prelude::ClassAttribute;
@@ -5,6 +6,7 @@ use leptos::prelude::view;
 use leptos::prelude::RwSignal;
 use leptos::{IntoView, component};
 
+use crate::components::demo::{Demo, DemoTab};
 use crate::components::demos::shader_editor::ShaderEditor;
 
 #[component]
@@ -72,8 +74,16 @@ fn Experiments() -> impl IntoView {
 
 #[component]
 fn ShaderLab() -> impl IntoView {
+    let selected_demo = RwSignal::new(Demo::CubePlanet);
     let vs_src = RwSignal::new(include_str!("../../render/renderer/shaders/cube.vert.wgsl").to_owned());
     let fs_src = RwSignal::new(include_str!("../../render/renderer/shaders/cube.frag.wgsl").to_owned());
+
+    // whenever demo changes, push its shader pair into the two text signals
+    Effect::new(move |_| {
+        let (vs, fs) = selected_demo.get().shaders();
+        vs_src.set(vs.to_owned());
+        fs_src.set(fs.to_owned());
+    });
 
     view! {
         <section id="shader-lab" class="py-8">
@@ -83,9 +93,8 @@ fn ShaderLab() -> impl IntoView {
             </p>
 
             <ul id="demo-tabs" class="flex gap-4 mb-4 border-b text-text">
-                <li><button data-demo="orbit"    class="tab active">Orbit Path</button></li>
-                <li><button data-demo="plasma" class="tab">Plasma Exhaust</button></li>
-                <li><button data-demo="noise"    class="tab">Wobbly Planet</button></li>
+                {Demo::CubePlanet  .labelled_button(selected_demo)}
+                {Demo::Animals     .labelled_button(selected_demo)}
             </ul>
 
             <div class="
@@ -99,7 +108,10 @@ fn ShaderLab() -> impl IntoView {
             // TODO: make demo's cover full width and have the editor be a tab you can switch to
             // instead of one next to the other as the demo window on mobile is too small
                 <div class="w-full h-96 rounded-xl border overflow-hidden flex items-center justify-center">
-                    <CubeDemo vs_src=vs_src fs_src=fs_src />
+                    {
+                        move ||
+                            selected_demo.get().canvas(vs_src, fs_src)
+                    }
                 </div>
             </div>
         </section>
