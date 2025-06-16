@@ -1,5 +1,5 @@
 use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show
+    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -8,8 +8,8 @@ use leptos::view;
 
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::web_gpu::reload_pipeline;
 use crate::render::web_gpu::init_wgpu;
+use crate::render::web_gpu::reload_pipeline;
 use crate::web_sys::HtmlCanvasElement;
 use leptos::IntoView;
 use leptos::component;
@@ -27,7 +27,7 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
     let canvas_id = "cube-demo-canvas";
 
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
-    let pending = RwSignal::new(None::<(String,String)>);
+    let pending = RwSignal::new(None::<(String, String)>);
 
     let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
 
@@ -96,7 +96,6 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
 
                 // now we kick off requestAnimationFrame(…) and draw each frame:
                 *g.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
-
                     // 1) borrow‐and‐render one frame
                     {
                         if state_rc.clone().borrow().is_none() {
@@ -129,7 +128,9 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
                     // 2) schedule next frame
                     web_sys::window()
                         .unwrap()
-                        .request_animation_frame(f.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+                        .request_animation_frame(
+                            f.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
+                        )
                         .unwrap();
                 }) as Box<dyn FnMut(f64)>));
 
