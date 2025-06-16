@@ -75,8 +75,8 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
                     }
                 };
 
-                let state_rc = state_for_spawn.clone();          // ← use the outer Rc
-                *state_rc.borrow_mut() = Some(state);      //   put the real state inside
+                let state_rc = state_for_spawn.clone();
+                *state_rc.borrow_mut() = Some(state);
 
                 let camera_rc = camera_for_spawn.clone();
                 *camera_rc.borrow_mut() = Some(CameraInput::default());
