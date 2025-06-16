@@ -155,6 +155,7 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         .map(InstanceRaw::from_mat4)
         .collect();
 
+    // TODO: allow instancing passthrouhg as well
     let instance_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Instance buffer"),
         contents: bytemuck::cast_slice(&instances),
