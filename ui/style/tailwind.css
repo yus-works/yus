@@ -2,3 +2,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.caret-transparent { caret-color: transparent; }
+.caret-visible     { caret-color: theme(colors.text.DEFAULT); }

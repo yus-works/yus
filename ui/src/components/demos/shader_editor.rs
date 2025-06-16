@@ -10,14 +10,34 @@ enum Mode {
     Normal,
 }
 
+fn update_block_cursor(textarea: &NodeRef<Textarea>, mode: Mode) {
+    let Some(t) = textarea.get() else { return };
+
+    let pos = t.selection_start().unwrap().unwrap();
+
+    match mode {
+        Mode::Insert => {
+            // collapse selection
+            t.set_selection_end(Some(pos)).ok();
+        }
+        Mode::Normal => {
+            // select the character under (after) the cursor
+            t.set_selection_end(Some(pos + 1)).ok();
+        }
+    }
+}
+
 fn vim_motion(textarea: &NodeRef<Textarea>, key: &str) {
     let Some(t) = textarea.get() else {
         return;
     };
 
-    let start = t.selection_start().unwrap().unwrap(); // byte positions
+    let start = t.selection_start().unwrap().unwrap();
+
+    // TODO: add basic selections and line edits and shit
     let end = t.selection_end().unwrap().unwrap();
-    let mut pos = end; // treat both ends the same
+
+    let mut pos = start; // treat both ends the same
 
     let value = t.value();
     let len = value.len() as u32;
@@ -122,6 +142,7 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
             Mode::Insert => {
                 if ev.key() == "Escape" || ev.key() == "Esc" {
                     set_mode.set(Mode::Normal);
+                    update_block_cursor(&textarea_ref, Mode::Normal);
                     ev.prevent_default();
                 }
             }
@@ -130,11 +151,13 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
                 match ev.key().as_str() {
                     "i" => {
                         set_mode.set(Mode::Insert);
+                        update_block_cursor(&textarea_ref, Mode::Insert);
                         ev.prevent_default();
                     }
                     "h" | "j" | "k" | "l"
                     | "w" | "b" | "0" | "$" => {
                         vim_motion(&textarea_ref, &ev.key());
+                        update_block_cursor(&textarea_ref, Mode::Normal);
                         ev.prevent_default();
                     }
                     _ => {
@@ -182,7 +205,8 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
                      p-4 font-mono rounded-xl resize-none \
                      border border-transparent focus:border-gray-300 \
                      focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-opacity-50 \
-                     {}", "joe"
+                     selection:bg-text selection:text-surface \
+                     {}", if mode.get() == Mode::Normal { "caret-transparent" } else { "caret-visible" }
                 )
                 prop:value=active_src
                 on:input=on_input
