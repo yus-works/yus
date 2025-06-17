@@ -160,7 +160,7 @@ pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Bu
 
     let time_buffer = create_time_buffer(&sc);
 
-    let res = [sc.config.width, sc.config.height];
+    let res = [sc.config.width as f32, sc.config.height as f32, 0 as f32, 0 as f32];
 
     let resolution_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Resoltion UBO"),

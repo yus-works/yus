@@ -102,13 +102,9 @@ impl GpuState {
     }
 
     pub fn render(&mut self, camera_input: &CameraInput, mesh: &CpuMesh, projection: &Projection) {
-        // 1) state already ready
-
-        // 2) acquire next frame
         let frame = self.surface_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&Default::default());
 
-        // 3) encode a render pass that clears green and draws the quad
         let mut encoder = self.surface_context.device.create_command_encoder(&Default::default());
         self.render_pass(&mut encoder, view);
 
@@ -141,6 +137,14 @@ impl GpuState {
             &self.resource_context.camera_ubo,
             0,
             bytemuck::cast_slice(&view_proj.to_cols_array_2d()),
+        );
+
+        let (w, h) = self.resolution(); // canvas actual size
+        let res = [w as f32, h as f32, 0 as f32, 0 as f32];
+        self.surface_context.queue.write_buffer(
+            &self.resource_context.resolution_ubo,
+            0,
+            bytemuck::cast_slice(&res),
         );
 
         #[repr(C)]

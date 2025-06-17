@@ -6,6 +6,7 @@ pub struct ResourceContext {
     pub light_ubo: wgpu::Buffer,
     pub material_ubo: wgpu::Buffer,
     pub time_ubo: wgpu::Buffer,
+    pub resolution_ubo: wgpu::Buffer,
 
     pub texture_view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
@@ -45,6 +46,7 @@ impl ResourceContext {
             light_ubo,
             material_ubo,
             time_ubo,
+            resolution_ubo,
 
             texture_view,
             sampler,
