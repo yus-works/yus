@@ -25,18 +25,36 @@ struct FSIn {
     @location(2) uv: vec2<f32>,
 };
 
+fn palette(t: f32) -> vec3<f32> {
+    let a = vec3<f32>(0.5, 0.5, 0.5);
+    let b = vec3<f32>(0.5, 0.5, 0.5);
+    let c = vec3<f32>(0.5, 0.5, 0.5);
+    let d = vec3<f32>(0.263, 0.416, 0.557);
+
+    return a + b * cos( 6.28318 * (c * t + d) );
+}
+
 @fragment
 fn fs_main(in : FSIn) -> @location(0) vec4<f32> {
     let aspect = screen.resolution.x / screen.resolution.y;
-    let uv = vec2<f32>(in.frag_pos.x * aspect, in.frag_pos.y);
+    var uv = vec2<f32>(in.frag_pos.x * aspect, in.frag_pos.y);
+
+    uv *= 2;
+    uv = fract(uv);
+    uv -= 0.5;
 
     var d = length(uv);
     let s = time_sec();
 
+    var col = palette(d + s);
+
     d = sin(d*8 + s)/8;
     d = abs(d);
 
-    d = smoothstep(0, 0.1, d);
+    d = 0.02 / d;
 
-    return vec4<f32>(d, d, d, 1.0);
+    col *= d;
+    col = col;
+
+    return vec4<f32>(col, 1.0);
 }
