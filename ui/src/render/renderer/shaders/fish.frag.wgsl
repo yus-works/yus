@@ -39,22 +39,24 @@ fn fs_main(in : FSIn) -> @location(0) vec4<f32> {
     let aspect = screen.resolution.x / screen.resolution.y;
     var uv = vec2<f32>(in.frag_pos.x * aspect, in.frag_pos.y);
 
-    uv *= 2;
-    uv = fract(uv);
-    uv -= 0.5;
+    let uv0 = uv;
+    var finCol = vec3<f32>(0.0);
 
-    var d = length(uv);
-    let s = time_sec();
+    for (var i = 0.0; i < 4.0; i = i + 1.0) {
+        uv = fract(uv * 1.5) - 0.5;
 
-    var col = palette(d + s);
+        var d = length(uv) * exp(-length(uv0));
+        let s = time_sec();
 
-    d = sin(d*8 + s)/8;
-    d = abs(d);
+        var col = palette(length(uv0) + s + i*.4);
 
-    d = 0.02 / d;
+        d = sin(d*8 + s)/8;
+        d = abs(d);
 
-    col *= d;
-    col = col;
+        d = pow(0.01 / d, 2);
 
-    return vec4<f32>(col, 1.0);
+        finCol = finCol + col * d;
+    }
+
+    return vec4<f32>(finCol, 1.0);
 }
