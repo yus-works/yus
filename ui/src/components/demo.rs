@@ -13,6 +13,8 @@ pub enum Demo {
 
 const CUBE_VS: &str = include_str!("../render/renderer/shaders/cube.vert.wgsl");
 const CUBE_FS: &str = include_str!("../render/renderer/shaders/cube.frag.wgsl");
+const FISH_VS: &str = include_str!("../render/renderer/shaders/fish.vert.wgsl");
+const FISH_FS: &str = include_str!("../render/renderer/shaders/fish.frag.wgsl");
 
 impl Demo {
     pub fn label(&self) -> &'static str {
@@ -23,7 +25,7 @@ impl Demo {
     }
     pub fn shaders(&self) -> (&'static str, &'static str) {
         match self {
-            Demo::Animals => (CUBE_VS, CUBE_FS),
+            Demo::Animals => (FISH_VS, FISH_FS),
             Demo::CubePlanet => (CUBE_VS, CUBE_FS),
         }
     }
