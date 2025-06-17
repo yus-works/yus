@@ -22,7 +22,7 @@
           pkgs.wasm-pack
           pkgs.binaryen
           pkgs.lld
-          pkgs.trunk-ng
+          pkgs.trunk
 
           # ─────────────────────────────────────────────
           # Node.js + TailwindCSS/PostCSS
