@@ -25,7 +25,15 @@ impl SurfaceContext {
         let adapter = request_adapter(&instance, &surface).await?;
         let (device, queue) = request_device(&adapter).await?;
         let surface_caps = surface.get_capabilities(&adapter);
-        let surface_format = surface_caps.formats[0]; // choose a supported format?
+
+        // NOTE: explicitly pick a non sRGB format because on WebGL the default is sRGB while on
+        // WebGPU the default is linear so this way they look the same
+        let surface_format = surface_caps
+            .formats
+            .iter()
+            .copied()
+            .find(|f| !f.is_srgb())
+            .unwrap_or(surface_caps.formats[0]);
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
