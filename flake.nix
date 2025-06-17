@@ -39,8 +39,6 @@
           rustup target add wasm32-unknown-unknown >/dev/null 2>&1 || true
 
           echo "⚙️  Entered dev shell on ${system}"
-          echo "    • Run `trunk serve` to build Rust → WASM + TailwindCSS"
-          echo "    • You can now run: `tailwindcss init` or `tailwindcss --help`"
         '';
       };
     });
