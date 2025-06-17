@@ -22,6 +22,17 @@ use crate::render::renderer::mesh::CpuMesh;
 use crate::render::web_gpu::init_wgpu;
 use crate::render::web_gpu::reload_pipeline;
 
+/// true on PCs with a mouse/track-pad, false on touch devices
+pub fn is_desktop() -> bool {
+    let win = web_sys::window().unwrap();
+    // ① media query: fine pointer ⇒ mouse/trackpad
+    if let Ok(Some(mql)) = win.match_media("(pointer: fine)") {
+        if mql.matches() { return true; }
+    }
+    // ② fallback: no touch points ⇒ desktop
+    win.navigator().max_touch_points() == 0
+}
+
 #[component]
 pub fn WebGPUNotSupportedMsg() -> impl IntoView {
     view! {

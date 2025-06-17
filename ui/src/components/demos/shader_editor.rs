@@ -1,8 +1,11 @@
 use leptos::{
+    control_flow::Show,
     component, html::Textarea, leptos_dom::logging::console_log, prelude::{
         event_target_value, signal, ClassAttribute, ElementChild, Get, NodeRef, NodeRefAttribute, OnAttribute, PropAttribute, RwSignal, Set
     }, view, IntoView
 };
+
+use super::utils;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum Mode {
@@ -100,6 +103,8 @@ fn vim_motion(textarea: &NodeRef<Textarea>, key: &str) {
 
 #[component]
 pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
+    let vim_enabled = utils::is_desktop();
+
     let (active_tab, set_active_tab) = signal("VS");
 
     let active_src = move || {
@@ -138,6 +143,8 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
     };
 
     let keydown = move |ev: web_sys::KeyboardEvent| {
+        if !vim_enabled { return; }
+
         match mode.get() {
             Mode::Insert => {
                 if ev.key() == "Escape" || ev.key() == "Esc" {
@@ -214,11 +221,12 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
                 node_ref=textarea_ref
             />
 
-            /* ---------- status bar ---------- */
-            <div class="h-6 px-3 text-xs flex items-center
-                        bg-neutral-dark text-text border-t border-gray-700 select-none">
-                { status }
-            </div>
+            <Show when=move || vim_enabled>
+                <div class="h-6 px-3 text-xs flex items-center
+                            bg-neutral-dark text-text border-t border-gray-700 select-none">
+                    { status }
+                </div>
+            </Show>
         </div>
     }
 
