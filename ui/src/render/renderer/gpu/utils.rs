@@ -67,6 +67,7 @@ pub fn create_uniform_bind_group_layout(sc: &SurfaceContext) -> wgpu::BindGroupL
 
             simple_ubo_layout_entry!(5, wgpu::ShaderStages::FRAGMENT, 32), // material buffer?
             simple_ubo_layout_entry!(6, wgpu::ShaderStages::FRAGMENT, 16), // time buffer
+            simple_ubo_layout_entry!(7, wgpu::ShaderStages::FRAGMENT, 16), // resolution
         ],
     })
 }
@@ -118,7 +119,7 @@ pub fn create_time_buffer(sc: &SurfaceContext) -> wgpu::Buffer {
     })
 }
 
-pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Buffer, wgpu::Buffer, wgpu::Buffer) {
+pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Buffer, wgpu::Buffer, wgpu::Buffer, wgpu::Buffer) {
     // 2.1 Camera UBO
     let aspect = sc.config.width as f32 / sc.config.height as f32;
     let proj   = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
@@ -159,7 +160,22 @@ pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Bu
 
     let time_buffer = create_time_buffer(&sc);
 
-    (camera_buffer, model_buffer, light_buffer, material_buffer, time_buffer)
+    let res = [sc.config.width, sc.config.height];
+
+    let resolution_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Resoltion UBO"),
+        contents: bytemuck::cast_slice(&res),
+        usage:  wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    });
+
+    (
+        camera_buffer,
+        model_buffer,
+        light_buffer,
+        material_buffer,
+        time_buffer,
+        resolution_buffer,
+    )
 }
 
 fn now_ms() -> f64 {
@@ -176,6 +192,7 @@ pub fn create_bind_group(
     light_buffer: &wgpu::Buffer,
     material_buffer: &wgpu::Buffer,
     time_buffer: &wgpu::Buffer,
+    resolution_buffer: &wgpu::Buffer,
 
     texture_view: &wgpu::TextureView,
     sampler: &wgpu::Sampler,
@@ -210,6 +227,10 @@ pub fn create_bind_group(
             wgpu::BindGroupEntry {
                 binding: 6,
                 resource: time_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 7,
+                resource: resolution_buffer.as_entire_binding(),
             },
         ],
         label: Some("UBO Bind Group"),
