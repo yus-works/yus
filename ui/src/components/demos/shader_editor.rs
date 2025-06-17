@@ -176,7 +176,7 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
     };
 
     view! {
-        <div class="w-full h-[22rem] flex flex-col" on:click=focus_textarea>
+        <div class="w-full h-[40rem] flex flex-col" on:click=focus_textarea>
             <div class="flex">
                 <button
                     class=move || format!(

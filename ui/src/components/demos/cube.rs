@@ -62,7 +62,7 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
           <canvas
             id=canvas_id
             width="800"
-            height="600"
+            height="800"
             class="w-full h-full object-cover touch-none select-none"
           ></canvas>
 
