@@ -30,6 +30,13 @@ fn fs_main(in : FSIn) -> @location(0) vec4<f32> {
     let aspect = screen.resolution.x / screen.resolution.y;
     let uv = vec2<f32>(in.frag_pos.x * aspect, in.frag_pos.y);
 
-    let d = length(uv);
-    return vec4<f32>(d, d, 0.0, 1.0);
+    var d = length(uv);
+    let s = time_sec();
+
+    d = sin(d*8 + s)/8;
+    d = abs(d);
+
+    d = smoothstep(0, 0.1, d);
+
+    return vec4<f32>(d, d, d, 1.0);
 }
