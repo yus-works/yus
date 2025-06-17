@@ -20,5 +20,6 @@ struct FSIn {
 
 @fragment
 fn fs_main(in : FSIn) -> @location(0) vec4<f32> {
-    return vec4<f32>(in.frag_pos.xy, 0.0, 1.0);
+    let d = length(in.frag_pos.xy);
+    return vec4<f32>(d, d, 0.0, 1.0);
 }
