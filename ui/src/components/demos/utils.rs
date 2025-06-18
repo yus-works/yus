@@ -300,7 +300,11 @@ pub fn start_rendering(
 
                         if let Ok(ci_ref) = camera_rc.try_borrow() {
                             if let Some(ci) = &*ci_ref {
-                                s.render(ci, &mesh_rc.borrow(), &proj_rc.borrow());
+                                s.render_default(
+                                    &proj_rc.borrow(),
+                                    ci,
+                                    &mesh_rc.borrow()
+                                );
                             }
                         }
                     }

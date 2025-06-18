@@ -7,6 +7,15 @@ use crate::render::renderer::{camera_input::CameraInput, mesh::CpuMesh, vertex::
 
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
+#[repr(C)]
+#[derive(Copy, Clone, Pod, Zeroable)]
+struct TimeUBO {
+    millis:     u32,
+    secs:       u32,
+    dt_ms:      u32,
+    frame_id:   u32,
+}
+
 pub struct GpuState {
     pub surface_context: SurfaceContext,
     pub resource_context: ResourceContext,
@@ -55,6 +64,13 @@ pub enum Projection {
     Custom(Mat4),
 }
 
+pub struct FrameCtx {
+    pub frame:          wgpu::SurfaceTexture,
+    pub encoder:        wgpu::CommandEncoder,
+    pub color_view:     wgpu::TextureView,
+    pub depth_view:     wgpu::TextureView,
+}
+
 impl GpuState {
     pub fn set_vertices(&mut self, vertices: &[Vertex]) {
         self.vertex_buffer = create_vert_buff(&self.surface_context, vertices);
@@ -68,7 +84,100 @@ impl GpuState {
         (self.surface_context.config.width as f32, self.surface_context.config.height as f32)
     }
 
-    fn render_pass(&self, encoder: &mut CommandEncoder, view: TextureView) {
+    /// Borrow-checked “begin frame” – returns a FrameCtx the caller can mutate.
+    pub fn begin_frame(&mut self) -> FrameCtx {
+        // 1) acquire swap-chain tex
+        let frame = self.surface_context.surface.get_current_texture().expect("swap-chain error");
+        let color_view  = frame.texture.create_view(&Default::default());
+
+        // 2) create an encoder for the caller
+        let encoder = self.surface_context.device.create_command_encoder(&Default::default());
+
+        FrameCtx {
+            frame,
+            encoder,
+            color_view,
+            depth_view : self.depth_view.clone(),
+        }
+    }
+
+    pub fn populate_buffers(
+        &mut self,
+        proj: &Projection,
+        ci: &CameraInput,
+        mesh: &CpuMesh,
+    ) {
+        let sc = &self.surface_context;
+        self.vertex_buffer = create_vert_buff(sc, mesh.vertices);
+        self.index_buffer = create_idx_buff(sc, mesh.indices);
+        self.num_indices = mesh.index_count;
+
+        let view_proj = match proj {
+            &Projection::FlatQuad => Mat4::IDENTITY,
+            &Projection::Custom(m) => m,
+            &Projection::Ortho2D { width, height } => {
+                Mat4::orthographic_rh_gl(
+                    0.0, width,
+                    height, 0.0,
+                    -1.0, 1.0,
+                )
+            }
+            &Projection::Fulcrum => {
+                let aspect = self.resolution().0 as f32 / self.resolution().1 as f32;
+                let proj = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
+                let view = Mat4::look_at_rh(ci.camera.eye(), ci.camera.target, ci.camera.up);
+
+                proj * view
+            }
+        };
+
+        self.surface_context.queue.write_buffer(
+            &self.resource_context.camera_ubo, 0,
+            bytemuck::cast_slice(&view_proj.to_cols_array_2d()),
+        );
+
+        let (w, h) = self.resolution(); // canvas actual size
+        let res = [w as f32, h as f32, 0 as f32, 0 as f32];
+        self.surface_context.queue.write_buffer(
+            &self.resource_context.resolution_ubo,
+            0,
+            bytemuck::cast_slice(&res),
+        );
+
+        // ── time maths ────────────────────────────────
+        let now_ms = web_sys::window().unwrap().performance().unwrap().now();
+        let dt_ms  = (now_ms - self.prev_ms) as u32;          // u32 fits 49 days
+        let secs   = (now_ms / 1000.0) as u32;
+        let millis = (now_ms as u32) % 1000;
+
+        let payload = TimeUBO {
+            millis,
+            secs,
+            dt_ms,
+            frame_id : self.frame_counter,
+        };
+
+        self.surface_context.queue.write_buffer(
+            &self.resource_context.time_ubo, 0,
+            bytemuck::bytes_of(&payload)
+        );
+
+        self.frame_counter += 1;
+        self.prev_ms = now_ms;
+    }
+
+    /// Finalise: submit & present.
+    pub fn end_frame(&mut self, frame_ctx: FrameCtx) {
+        self.surface_context.queue.submit(Some(frame_ctx.encoder.finish()));
+
+        // present after encoder is dropped so borrow checker is happy ?
+        drop(frame_ctx.color_view);      // no-op but clarifies intent
+
+        // 4) submit + present
+        frame_ctx.frame.present();
+    }
+
+    fn default_rpass(&self, encoder: &mut CommandEncoder, view: &TextureView) {
         let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -103,86 +212,18 @@ impl GpuState {
         rpass.draw_indexed(0..self.num_indices, 0, 0..self.instance_count);
     }
 
-    pub fn render(&mut self, camera_input: &CameraInput, mesh: &CpuMesh, projection: &Projection) {
-        let frame = self.surface_context.surface.get_current_texture().unwrap();
-        let view = frame.texture.create_view(&Default::default());
+    pub fn render_default(
+        &mut self,
+        proj: &Projection,
+        ci: &CameraInput,
+        mesh: &CpuMesh,
+    ) {
+        let mut ctx = self.begin_frame();
 
-        let mut encoder = self.surface_context.device.create_command_encoder(&Default::default());
-        self.render_pass(&mut encoder, view);
+        self.populate_buffers(proj, ci, mesh);
 
-        let sc = &self.surface_context;
+        self.default_rpass(&mut ctx.encoder, &ctx.color_view);
 
-        self.vertex_buffer = create_vert_buff(sc, mesh.vertices);
-        self.index_buffer = create_idx_buff(sc, mesh.indices);
-        self.num_indices = mesh.index_count;
-
-        let view_proj = match projection {
-            &Projection::FlatQuad => Mat4::IDENTITY,
-            &Projection::Custom(m) => m,
-            &Projection::Ortho2D { width, height } => {
-                Mat4::orthographic_rh_gl(
-                    0.0, width,
-                    height, 0.0,
-                    -1.0, 1.0,
-                )
-            }
-            &Projection::Fulcrum => {
-                let aspect = self.resolution().0 as f32 / self.resolution().1 as f32;
-                let proj = Mat4::perspective_rh_gl(45f32.to_radians(), aspect, 0.1, 100.0);
-                let view = Mat4::look_at_rh(camera_input.camera.eye(), camera_input.camera.target, camera_input.camera.up);
-
-                proj * view
-            }
-        };
-
-        self.surface_context.queue.write_buffer(
-            &self.resource_context.camera_ubo,
-            0,
-            bytemuck::cast_slice(&view_proj.to_cols_array_2d()),
-        );
-
-        let (w, h) = self.resolution(); // canvas actual size
-        let res = [w as f32, h as f32, 0 as f32, 0 as f32];
-        self.surface_context.queue.write_buffer(
-            &self.resource_context.resolution_ubo,
-            0,
-            bytemuck::cast_slice(&res),
-        );
-
-        #[repr(C)]
-        #[derive(Copy, Clone, Pod, Zeroable)]
-        struct TimeUBO {
-            millis:     u32,
-            secs:       u32,
-            dt_ms:      u32,
-            frame_id:   u32,
-        }
-
-        // ── time maths ────────────────────────────────
-        let now_ms = web_sys::window().unwrap().performance().unwrap().now();
-        let dt_ms  = (now_ms - self.prev_ms) as u32;          // u32 fits 49 days
-        let secs   = (now_ms / 1000.0) as u32;
-        let millis = (now_ms as u32) % 1000;
-
-        let payload = TimeUBO {
-            millis,
-            secs,
-            dt_ms,
-            frame_id : self.frame_counter,
-        };
-
-        self.surface_context.queue.write_buffer(
-            &self.resource_context.time_ubo,          // add field in struct
-            0,
-            bytemuck::bytes_of(&payload) // 16-byte vec4
-        );
-
-        self.frame_counter += 1;
-        self.prev_ms = now_ms;
-
-        // 4) submit + present
-        self.surface_context.queue.submit(Some(encoder.finish()));
-        frame.present();
+        self.end_frame(ctx);
     }
 }
-
