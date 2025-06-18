@@ -3,16 +3,21 @@ use leptos::prelude::ElementChild;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::OnAttribute;
 
-use super::demos::{animals::Animals, cube::CubePlanet};
+use super::demos::{animals::Animals, cube::CubePlanet, frag_intro::FragIntro};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Demo {
     CubePlanet,
     Animals,
+    FragIntro
 }
 
 const CUBE_VS: &str = include_str!("../render/renderer/shaders/cube.vert.wgsl");
 const CUBE_FS: &str = include_str!("../render/renderer/shaders/cube.frag.wgsl");
+
+const FRAG_VS: &str = include_str!("../render/renderer/shaders/frag_intro.vert.wgsl");
+const FRAG_FS: &str = include_str!("../render/renderer/shaders/frag_intro.frag.wgsl");
+
 const FISH_VS: &str = include_str!("../render/renderer/shaders/fish.vert.wgsl");
 const FISH_FS: &str = include_str!("../render/renderer/shaders/fish.frag.wgsl");
 
@@ -21,12 +26,14 @@ impl Demo {
         match self {
             Demo::Animals => "Procedurally Animated Animals",
             Demo::CubePlanet => "Cube Planet Visualizer",
+            Demo::FragIntro => "Fragment Shader Intro",
         }
     }
     pub fn shaders(&self) -> (&'static str, &'static str) {
         match self {
             Demo::Animals => (FISH_VS, FISH_FS),
             Demo::CubePlanet => (CUBE_VS, CUBE_FS),
+            Demo::FragIntro => (FRAG_VS, FRAG_FS),
         }
     }
 
@@ -35,6 +42,7 @@ impl Demo {
         match self {
             Demo::Animals => view! { <Animals vs_src=vs_src fs_src=fs_src/> }.into_any(),
             Demo::CubePlanet => view! { <CubePlanet vs_src=vs_src fs_src=fs_src/> }.into_any(),
+            Demo::FragIntro => view! { <FragIntro vs_src=vs_src fs_src=fs_src/> }.into_any(),
         }
     }
 }

@@ -95,6 +95,7 @@ fn ShaderLab() -> impl IntoView {
             <ul id="demo-tabs" class="flex gap-4 mb-4 border-b text-text">
                 {Demo::CubePlanet  .labelled_button(selected_demo)}
                 {Demo::Animals     .labelled_button(selected_demo)}
+                {Demo::FragIntro   .labelled_button(selected_demo)}
             </ul>
 
             <div class="
