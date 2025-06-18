@@ -28,19 +28,18 @@ pub async fn reload_pipeline(
 ) -> anyhow::Result<()> {
     use std::borrow::Cow;
 
-    let (device, config, layout) = {
+    let (layout, config, device) = {
         let guard = state
             .try_borrow()
             .map_err(|_| anyhow!("GpuState busy"))?;
 
         let st = guard.as_ref().ok_or(anyhow!("GpuState is None"))?;
+        let dev = st.surface_context.device.clone();
 
         (
-            st.surface_context.device.clone(),
+            st.resource_context.pipeline_layout(&dev),
             st.surface_context.config.clone(),
-            st.resource_context
-                .bind_group_layout
-                .clone(),
+            dev,
         )
     }; // guard dropped
 
@@ -75,20 +74,14 @@ pub async fn reload_pipeline(
 pub fn create_pipeline(
     device: &wgpu::Device,
     config: &wgpu::SurfaceConfiguration,
-    uniform_bind_group_layout: &wgpu::BindGroupLayout,
+    pipeline_layout: &wgpu::PipelineLayout,
     vs_shader: &VertexShader,
     fs_shader: &FragmentShader,
 ) -> wgpu::RenderPipeline {
-    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Pipeline Layout"),
-        bind_group_layouts: &[uniform_bind_group_layout],
-        push_constant_ranges: &[],
-    });
-
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         cache: None,
         label: Some("Render Pipeline"),
-        layout: Some(&layout),
+        layout: Some(pipeline_layout),
         vertex: wgpu::VertexState {
             compilation_options: Default::default(),
             module: &vs_shader,
@@ -143,7 +136,7 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         })
     );
 
-    let pipeline = create_pipeline(&sc.device, &sc.config, &rc.bind_group_layout, &vs_module, &fs_module);
+    let pipeline = create_pipeline(&sc.device, &sc.config, &rc.pipeline_layout(&sc.device), &vs_module, &fs_module);
     let depth_view = create_depth_view(&sc.device, &sc.config);
 
     let translations = [

@@ -38,40 +38,6 @@ macro_rules! simple_ubo_layout_entry {
   };
 }
 
-pub fn create_uniform_bind_group_layout(sc: &SurfaceContext) -> wgpu::BindGroupLayout {
-    sc.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("UBO Bind Group Layout"),
-
-        entries: &[
-            simple_ubo_layout_entry!(0, wgpu::ShaderStages::VERTEX, 64), // binding 0 = Camera UBO (mat4x4)
-            simple_ubo_layout_entry!(1, wgpu::ShaderStages::VERTEX, 64), // binding 1 = Model UBO (mat4x4)
-            simple_ubo_layout_entry!(2, wgpu::ShaderStages::FRAGMENT, 32), // binding 2 = Light UBO (vec3 + padding)
-            // binding=3: the texture view
-            wgpu::BindGroupLayoutEntry {
-                binding:    3,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type:     wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension:  wgpu::TextureViewDimension::D2,
-                    multisampled:    false,
-                },
-                count: None,
-            },
-            // binding=4: the sampler
-            wgpu::BindGroupLayoutEntry {
-                binding:    4,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                count: None,
-            },
-
-            simple_ubo_layout_entry!(5, wgpu::ShaderStages::FRAGMENT, 32), // material buffer?
-            simple_ubo_layout_entry!(6, wgpu::ShaderStages::FRAGMENT, 16), // time buffer
-            simple_ubo_layout_entry!(7, wgpu::ShaderStages::FRAGMENT, 16), // resolution
-        ],
-    })
-}
-
 pub async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue)> {
     adapter.request_device(&wgpu::DeviceDescriptor {
         label: None,
@@ -184,20 +150,57 @@ fn now_ms() -> f64 {
         .now()                // DOMHighResTimeStamp
 }
 
-pub fn create_bind_group(
+pub fn common_bind_group(
     device: &wgpu::Device,
-    layout: &wgpu::BindGroupLayout,
+
+    time_buffer: &wgpu::Buffer,
+    resolution_buffer: &wgpu::Buffer,
+) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("Common Bind Group Layout"),
+
+        entries: &[
+            simple_ubo_layout_entry!(0, wgpu::ShaderStages::FRAGMENT, 16),
+            simple_ubo_layout_entry!(1, wgpu::ShaderStages::FRAGMENT, 16),
+        ],
+    });
+
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: time_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: resolution_buffer.as_entire_binding(),
+            },
+        ],
+        label: Some("Common Bind Group"),
+    });
+
+    (layout, group)
+}
+
+pub fn spatial_bind_group(
+    device: &wgpu::Device,
+
     camera_buffer: &wgpu::Buffer,
     model_buffer: &wgpu::Buffer,
     light_buffer: &wgpu::Buffer,
-    material_buffer: &wgpu::Buffer,
-    time_buffer: &wgpu::Buffer,
-    resolution_buffer: &wgpu::Buffer,
+) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("3D Bind Group Layout"),
 
-    texture_view: &wgpu::TextureView,
-    sampler: &wgpu::Sampler,
-) -> wgpu::BindGroup {
-    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        entries: &[
+            simple_ubo_layout_entry!(0, wgpu::ShaderStages::VERTEX, 64),
+            simple_ubo_layout_entry!(1, wgpu::ShaderStages::VERTEX, 64),
+            simple_ubo_layout_entry!(2, wgpu::ShaderStages::FRAGMENT, 32),
+        ],
+    });
+
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: &layout,
         entries: &[
             wgpu::BindGroupEntry {
@@ -212,29 +215,64 @@ pub fn create_bind_group(
                 binding: 2,
                 resource: light_buffer.as_entire_binding(),
             },
+        ],
+        label: Some("3D Bind Group"),
+    });
+
+    (layout, group)
+}
+
+pub fn texturing_bind_group(
+    device: &wgpu::Device,
+
+    material_buffer: &wgpu::Buffer,
+    texture_view: &wgpu::TextureView,
+    sampler: &wgpu::Sampler,
+) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("Texturing Bind Group Layout"),
+
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding:    0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type:     wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension:  wgpu::TextureViewDimension::D2,
+                    multisampled:    false,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding:    1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+            simple_ubo_layout_entry!(2, wgpu::ShaderStages::FRAGMENT, 32),
+        ],
+    });
+
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &layout,
+        entries: &[
             wgpu::BindGroupEntry {
-                binding: 3,
+                binding: 0,
                 resource: wgpu::BindingResource::TextureView(&texture_view),
             },
             wgpu::BindGroupEntry {
-                binding: 4,
+                binding: 1,
                 resource: wgpu::BindingResource::Sampler(&sampler),
             },
             wgpu::BindGroupEntry {
-                binding: 5,
+                binding: 2,
                 resource: material_buffer.as_entire_binding(),
             },
-            wgpu::BindGroupEntry {
-                binding: 6,
-                resource: time_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 7,
-                resource: resolution_buffer.as_entire_binding(),
-            },
         ],
-        label: Some("UBO Bind Group"),
-    })
+        label: Some("Texturing Bind Group"),
+    });
+
+    (layout, group)
 }
 
 // TODO: change to not compile time baked in image

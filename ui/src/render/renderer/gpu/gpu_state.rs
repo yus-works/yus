@@ -96,7 +96,9 @@ impl GpuState {
         rpass.set_vertex_buffer(1, self.instance_buffer.slice(..)); // per-instance models
         rpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        rpass.set_bind_group(0, &self.resource_context.bind_group, &[]);
+        rpass.set_bind_group(0, &self.resource_context.common_bind_group.group, &[]);
+        rpass.set_bind_group(1, &self.resource_context.spatial_bind_group.group, &[]);
+        rpass.set_bind_group(2, &self.resource_context.texturing_bind_group.group, &[]);
 
         rpass.draw_indexed(0..self.num_indices, 0, 0..self.instance_count);
     }

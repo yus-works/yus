@@ -5,14 +5,14 @@ struct TimeUBO {
     frame_id   : u32,   // ++ every render()
 };
 
-@group(0) @binding(6)
+@group(0) @binding(0)
 var<uniform> g_time : TimeUBO;
 
 struct Screen {
     resolution : vec2<f32>, // (width, height)
     _pad       : vec2<f32>, // alignment padding
 };
-@group(0) @binding(7)
+@group(0) @binding(1)
 var<uniform> screen : Screen;
 
 // helper if you want float seconds

@@ -6,7 +6,7 @@ struct TimeUBO {
     dt_millis  : u32,   // last-frame Δ in ms
     frame_id   : u32,   // ++ every render()
 };
-@group(0) @binding(6)
+@group(0) @binding(0)
 var<uniform> g_time : TimeUBO;
 
 // helper if you want float seconds
@@ -14,9 +14,10 @@ fn time_sec() -> f32 {
     return f32(g_time.secs) + f32(g_time.millis) * 0.001;
 }
 
-@group(0) @binding(2) var<uniform> light  : Light;
-@group(0) @binding(3) var texture_data    : texture_2d<f32>;
-@group(0) @binding(4) var texture_sampler : sampler;
+@group(1) @binding(2) var<uniform> light  : Light;
+
+@group(2) @binding(0) var texture_data    : texture_2d<f32>;
+@group(2) @binding(1) var texture_sampler : sampler;
 
 struct FSIn {
     @location(0) frag_pos : vec3<f32>,
