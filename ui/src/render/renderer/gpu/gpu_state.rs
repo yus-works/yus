@@ -101,7 +101,7 @@ impl GpuState {
         }
     }
 
-    pub fn populate_buffers(
+    pub fn populate_common_buffers(
         &mut self,
         proj: &Projection,
         ci: &CameraInput,
@@ -220,7 +220,7 @@ impl GpuState {
     ) {
         let mut ctx = self.begin_frame();
 
-        self.populate_buffers(proj, ci, mesh);
+        self.populate_common_buffers(proj, ci, mesh);
 
         self.default_rpass(&mut ctx.encoder, &ctx.color_view);
 
