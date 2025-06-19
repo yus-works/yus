@@ -8,6 +8,7 @@ use leptos::view;
 
 use crate::meshes;
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::gpu_state::make_default_rpass;
 use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::mesh::CpuMesh;
@@ -54,8 +55,7 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
         pending,
         canvas_id,
 
-        mesh,
-        proj,
+        vec![make_default_rpass(mesh, proj)],
     );
 
     view! {

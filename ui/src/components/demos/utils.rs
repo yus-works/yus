@@ -208,7 +208,78 @@ pub fn add_mousewheel_zoom(camera_input: &Rc<RefCell<Option<CameraInput>>>, canv
     Ok(())
 }
 
+fn get_canvas(id: &str) -> Option<HtmlCanvasElement> {
+    web_sys::window()?
+        .document()?
+        .get_element_by_id(id)?
+        .dyn_into::<HtmlCanvasElement>()
+        .ok()
+}
+
+fn add_input_handlers(
+    camera: &Rc<RefCell<Option<CameraInput>>>,
+    canvas: &HtmlCanvasElement,
+    show_hint: RwSignal<bool>,
+) {
+    if let Err(e) = add_camera_orbit(camera, canvas, show_hint) {
+        web_sys::console::error_1(&format!("add_camera_orbit failed: {e:?}").into());
+    }
+    if let Err(e) = add_mousewheel_zoom(camera, canvas) {
+        web_sys::console::error_1(&format!("add_mousewheel_zoom failed: {e:?}").into());
+    }
+}
+
 pub type RenderPass = Rc<RefCell<dyn FnMut(&mut GpuState, &CameraInput, &mut FrameCtx)>>;
+
+fn start_render_loop(
+    state_rc: Rc<RefCell<Option<GpuState>>>,
+    camera_rc: Rc<RefCell<Option<CameraInput>>>,
+    pending: RwSignal<Option<(String, String)>>,
+    rpasses: Vec<RenderPass>,
+) {
+    let raf: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
+    let raf_clone = raf.clone();
+
+    *raf_clone.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
+        // ── Hot‑reload -------------------------------------------------------
+        if let Some((vs, fs)) = pending.get_untracked() {
+            let st_clone = state_rc.clone();
+            spawn_local(async move {
+                if let Err(msg) = reload_pipeline(&st_clone, &vs, &fs).await {
+                    web_sys::console::error_1(&msg.to_string().into());
+                }
+            });
+            pending.set(None);
+        }
+
+        // ── Run user passes --------------------------------------------------
+        if let (Some(state), Ok(cam_ref)) =
+            (state_rc.borrow_mut().as_mut(), camera_rc.try_borrow())
+        {
+            let cam = cam_ref.as_ref().expect("CameraInput is None");
+            let mut ctx = state.begin_frame();
+
+            for pass in &rpasses {
+                (pass.borrow_mut())(state, cam, &mut ctx);
+            }
+
+            state.end_frame(ctx);
+        }
+
+        // ── Next frame -------------------------------------------------------
+        web_sys::window()
+            .unwrap()
+            .request_animation_frame(
+                raf.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
+            )
+            .unwrap();
+    }) as Box<dyn FnMut(f64)>));
+
+    web_sys::window()
+        .unwrap()
+        .request_animation_frame(raf_clone.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+        .unwrap();
+}
 
 pub fn start_rendering(
     state_rc: Rc<RefCell<Option<GpuState>>>,
@@ -220,112 +291,48 @@ pub fn start_rendering(
 
     canvas_id: &str,
 
-    mesh: Rc<RefCell<CpuMesh<'static>>>,
-    projection: Rc<RefCell<Projection>>,
+    rpasses: Vec<RenderPass>,
 ) {
-        let state_for_init = state_rc.clone();
-        let show_hint_for_init = show_hint.clone();
-        let canvas_id = canvas_id.to_string();
-        let camera_rc = camera_rc.clone();
+        let canvas_id = canvas_id.to_owned();
 
         Effect::new(move |_| {
-            let state_for_spawn = state_for_init.clone();
-            let show_hint = show_hint_for_init.clone();
-            let id = canvas_id.clone();
-            let camera_for_spawn = camera_rc.clone();
-            let mesh_rc = mesh.clone();
-            let proj_rc = projection.clone();
+            let state_rc_init = state_rc.clone();
+            let camera_rc_init = camera_rc.clone();
+
+            let pending = pending.clone();
+            let show_hint = show_hint.clone();
+            let gpu_support = gpu_support.clone();
+
+            let canvas_id = canvas_id.clone();
+
+            let rpasses_init = rpasses.clone();
 
             spawn_local(async move {
-                // 1) wait until the <canvas> actually exists
                 TimeoutFuture::new(0).await;
 
-                // 2) grab the DOM canvas
-                let document = web_sys::window().unwrap().document().unwrap();
-                let canvas: HtmlCanvasElement = document
-                    .get_element_by_id(&id)
-                    .expect("canvas not in DOM yet")
-                    .dyn_into::<HtmlCanvasElement>()
-                    .expect("element is not a canvas");
-
-                // 3) init WGPU with that canvas
-                let state = match init_wgpu(&canvas).await {
-                    Ok(s) => s,
-                    Err(err) => {
-                        gpu_support.set(false);
-                        web_sys::console::error_1(&format!("WGPU init failed: {:?}", err).into());
+                let canvas = match get_canvas(&canvas_id) {
+                    Some(c) => c,
+                    None => {
+                        web_sys::console::error_1(&"Canvas not found".into());
                         return;
                     }
                 };
 
-                let state_rc = state_for_spawn.clone();
-                *state_rc.borrow_mut() = Some(state);
-
-                let camera_rc = camera_for_spawn.clone();
-                *camera_rc.borrow_mut() = Some(CameraInput::default());
-
-                if let Err(e) = add_camera_orbit(&camera_rc, &canvas, show_hint) {
-                    web_sys::console::error_1(&format!("add_camera_orbit failed: {e:?}").into());
-                }
-                if let Err(e) = add_mousewheel_zoom(&camera_rc, &canvas) {
-                    web_sys::console::error_1(&format!("add_mousewheel_zoom failed: {e:?}").into());
-                }
-
-                // ───  RENDER LOOP ────────────────────────────────────────────────────────────────
-
-                // we’ll store the RAF callback so we can re‐schedule it each frame
-                let f: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
-                let g = f.clone();
-
-                // now we kick off requestAnimationFrame(…) and draw each frame:
-                *g.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
-                    // 1) borrow‐and‐render one frame
-                    {
-                        if state_rc.clone().borrow().is_none() {
-                            web_sys::console::error_1(&format!("State is somehow none?").into());
-                        }
-
-                        let st = state_rc.clone();
-
-                        if let Some((vs, fs)) = pending.get_untracked() {
-                            spawn_local(async move {
-                                if let Err(msg) = reload_pipeline(&st, &vs, &fs).await {
-                                    // TODO: show failed to compile error to user
-                                    web_sys::console::error_1(&msg.to_string().into());
-                                }
-                            });
-
-                            pending.set(None);
-                        }
-
-                        let mut guard = state_rc.borrow_mut();
-                        let s = guard.as_mut().unwrap();
-
-                        if let Ok(ci_ref) = camera_rc.try_borrow() {
-                            if let Some(ci) = &*ci_ref {
-                                s.render_default(
-                                    &proj_rc.borrow(),
-                                    ci,
-                                    &mesh_rc.borrow()
-                                );
-                            }
-                        }
+                let state = match init_wgpu(&canvas).await {
+                    Ok(s) => s,
+                    Err(err) => {
+                        gpu_support.set(false);
+                        web_sys::console::error_1(&format!("WGPU init failed: {err:?}").into());
+                        return;
                     }
+                };
 
-                    // 2) schedule next frame
-                    web_sys::window()
-                        .unwrap()
-                        .request_animation_frame(
-                            f.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
-                        )
-                        .unwrap();
-                }) as Box<dyn FnMut(f64)>));
+                *state_rc_init.borrow_mut() = Some(state);
+                *camera_rc_init.borrow_mut() = Some(CameraInput::default());
 
-                // initial kick
-                web_sys::window()
-                    .unwrap()
-                    .request_animation_frame(g.borrow().as_ref().unwrap().as_ref().unchecked_ref())
-                    .unwrap();
+                add_input_handlers(&camera_rc_init, &canvas, show_hint);
+
+                start_render_loop(state_rc_init, camera_rc_init, pending, rpasses_init);
             });
         });
 }
