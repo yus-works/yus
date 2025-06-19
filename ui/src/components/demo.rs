@@ -3,6 +3,8 @@ use leptos::prelude::ElementChild;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::OnAttribute;
 
+use crate::render::renderer::vertex::Vertex;
+
 use super::demos::{animals::Animals, cube::CubePlanet, frag_intro::FragIntro};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -67,4 +69,57 @@ impl DemoTab for Demo {
             </li>
         }
     }
+}
+
+pub fn make_pipeline_with_topology(
+    device: &wgpu::Device,
+    format: wgpu::TextureFormat,
+    topology: wgpu::PrimitiveTopology,
+    vs_src: &str,
+    fs_src: &str,
+) -> wgpu::RenderPipeline {
+    let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("vs shader with custom topology"),
+        source: wgpu::ShaderSource::Wgsl(vs_src.into()),
+    });
+
+    let fs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("fs shader with custom topology"),
+        source: wgpu::ShaderSource::Wgsl(fs_src.into()),
+    });
+
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("empty layout"),
+        bind_group_layouts: &[],
+        push_constant_ranges: &[],
+    });
+
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("custom strip pipeline"),
+        layout: Some(&layout),
+        cache: None,
+        vertex: wgpu::VertexState {
+            module: &vs,
+            entry_point: Some("vs_main"),
+            buffers: &[Vertex::desc()],
+            compilation_options: Default::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &fs,
+            entry_point: Some("fs_main"),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: Default::default(),
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology,
+            ..Default::default()
+        },
+        depth_stencil: None,
+        multisample: Default::default(),
+        multiview: None,
+    })
 }
