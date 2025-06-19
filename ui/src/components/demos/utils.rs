@@ -16,6 +16,7 @@ use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
 
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::gpu_state::FrameCtx;
 use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::mesh::CpuMesh;
@@ -206,6 +207,8 @@ pub fn add_mousewheel_zoom(camera_input: &Rc<RefCell<Option<CameraInput>>>, canv
 
     Ok(())
 }
+
+pub type RenderPass = Rc<RefCell<dyn FnMut(&mut GpuState, &CameraInput, &mut FrameCtx)>>;
 
 pub fn start_rendering(
     state_rc: Rc<RefCell<Option<GpuState>>>,
