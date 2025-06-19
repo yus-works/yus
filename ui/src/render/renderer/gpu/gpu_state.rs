@@ -1,9 +1,11 @@
+use std::{cell::RefCell, rc::Rc};
+
 use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
 use glam::Mat4;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
-use crate::render::renderer::{camera_input::CameraInput, mesh::CpuMesh, vertex::Vertex};
+use crate::{components::demos::utils::RenderPass, render::renderer::{camera_input::CameraInput, mesh::CpuMesh, vertex::Vertex}};
 
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
@@ -255,19 +257,14 @@ impl GpuState {
 
         rpass.draw_indexed(0..self.num_indices, 0, 0..self.instance_count);
     }
+}
 
-    pub fn render_default(
-        &mut self,
-        proj: &Projection,
-        ci: &CameraInput,
-        mesh: &CpuMesh,
-    ) {
-        let mut ctx = self.begin_frame();
-
-        self.populate_common_buffers(proj, ci, mesh);
-
-        self.default_rpass(&mut ctx.encoder, &ctx.color_view);
-
-        self.end_frame(ctx);
-    }
+pub fn make_default_rpass(
+    mesh: Rc<RefCell<CpuMesh<'static>>>,
+    proj: Rc<RefCell<Projection>>,
+) -> RenderPass {
+    Rc::new(RefCell::new(move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
+        st.populate_common_buffers(&proj.borrow(), cam, &mesh.borrow());
+        st.default_rpass(&mut ctx.encoder, &ctx.color_view);
+    }))
 }
