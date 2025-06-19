@@ -71,6 +71,50 @@ pub struct FrameCtx {
     pub depth_view:     wgpu::TextureView,
 }
 
+impl FrameCtx {
+    /// Open a render-pass, hand it to the user closure, then drop it.
+    pub fn pass<'a, F>(&'a mut self, desc: wgpu::RenderPassDescriptor<'a>, f: F)
+    where
+        F: FnOnce(&mut wgpu::RenderPass<'a>)
+    {
+        let mut rp = self.encoder.begin_render_pass(&desc);
+        f(&mut rp);                 // user records whatever commands they want
+        // rp dropped here → render-pass ends
+    }
+
+    pub fn with_default_descriptor<F>(&mut self, clear: wgpu::Color, f: F)
+    where
+        F: for<'a> FnOnce(&mut wgpu::RenderPass<'a>)
+    {
+        let view = self.color_view.clone();
+        let depth = self.depth_view.clone();
+
+        let desc = wgpu::RenderPassDescriptor {
+            label: Some("user pass"),
+
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(clear),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &depth,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
+            ..Default::default()
+        };
+
+        self.pass(desc, f);
+    }
+}
+
 impl GpuState {
     pub fn set_vertices(&mut self, vertices: &[Vertex]) {
         self.vertex_buffer = create_vert_buff(&self.surface_context, vertices);
