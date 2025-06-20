@@ -281,7 +281,7 @@ fn start_render_loop(
         .unwrap();
 }
 
-pub fn start_rendering(
+pub fn start_rendering<F>(
     state_rc: Rc<RefCell<Option<GpuState>>>,
     camera_rc: Rc<RefCell<Option<CameraInput>>>,
 
@@ -292,8 +292,12 @@ pub fn start_rendering(
     canvas_id: &str,
 
     rpasses: Vec<RenderPass>,
-) {
+    on_canvas_ready: F, // extra closure after canvas is ready hook
+) where
+    F: 'static + Fn(&HtmlCanvasElement) + Clone,
+{
         let canvas_id = canvas_id.to_owned();
+        let on_canvas_ready = Rc::new(on_canvas_ready);
 
         Effect::new(move |_| {
             let state_rc_init = state_rc.clone();
@@ -307,6 +311,8 @@ pub fn start_rendering(
 
             let rpasses_init = rpasses.clone();
 
+            let on_ready = on_canvas_ready.clone();
+
             spawn_local(async move {
                 TimeoutFuture::new(0).await;
 
@@ -317,6 +323,9 @@ pub fn start_rendering(
                         return;
                     }
                 };
+
+                // run user hook
+                (on_ready)(&canvas);
 
                 let state = match init_wgpu(&canvas).await {
                     Ok(s) => s,

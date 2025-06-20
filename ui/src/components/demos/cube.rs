@@ -37,8 +37,8 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
     }
 
     let mesh = CpuMesh::new(
-        meshes::cube::CUBE_VERTICES,
-        meshes::cube::CUBE_INDICES,
+        meshes::cube::CUBE_VERTICES.to_vec(),
+        meshes::cube::CUBE_INDICES.to_vec(),
     );
 
     let mesh = Rc::new(RefCell::new(mesh));
@@ -49,7 +49,8 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
         state_rc, camera_rc,
         show_hint, gpu_support,
         pending, canvas_id,
-        vec![make_default_rpass(mesh, proj)]
+        vec![make_default_rpass(mesh, proj)],
+        |_canvas: &web_sys::HtmlCanvasElement| {},
     );
 
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.

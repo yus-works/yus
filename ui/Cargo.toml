@@ -20,7 +20,12 @@ bytemuck                     = { workspace = true }
 image                        = { workspace = true }
 wasm-bindgen-futures         = { workspace = true }
 gloo-timers                  = { workspace = true , features = ["futures"], optional = true }
-web-sys                      = { workspace = true , features = [ "Window", "Performance" ], optional = true }
+web-sys                      = { workspace = true , features = [ 
+  "Window", "Performance",
+    "HtmlElement",
+    "Element",
+    "DomRect",
+], optional = true }
 
 
 [features]

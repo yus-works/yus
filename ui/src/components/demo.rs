@@ -1,7 +1,10 @@
+use glam::Vec2;
+use wasm_bindgen::JsCast;
 use leptos::{prelude::{AnyView, IntoAny, RwSignal, Get, Set}, view, IntoView};
 use leptos::prelude::ElementChild;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::OnAttribute;
+use web_sys::{HtmlCanvasElement, HtmlElement, PointerEvent};
 
 use crate::render::renderer::vertex::Vertex;
 
@@ -122,4 +125,26 @@ pub fn make_pipeline_with_topology(
         multisample: Default::default(),
         multiview: None,
     })
+}
+
+pub fn to_clip_space(e: &PointerEvent, canvas: &HtmlCanvasElement) -> Vec2 {
+    // 1) upcast to HtmlElement → gain get_bounding_client_rect()
+    let html: &HtmlElement = canvas.unchecked_ref();          // cheap, no runtime cost
+    let rect = html.get_bounding_client_rect();               // DOMRect
+
+    // 2) cursor position inside the canvas, in *CSS* pixels
+    let x_css = e.client_x() as f32 - rect.left()  as f32;
+    let y_css = e.client_y() as f32 - rect.top()   as f32;
+
+    // 3) handle Hi-DPI: convert CSS-px → device-px (canvas backing store)
+    let scale_x = canvas.width()  as f32 / rect.width()  as f32;
+    let scale_y = canvas.height() as f32 / rect.height() as f32;
+    let x_px = x_css * scale_x;
+    let y_px = y_css * scale_y;
+
+    // 4) device-px → clip space (-1…+1), flip Y
+    let x_clip =  2.0 * (x_px / canvas.width()  as f32) - 1.0;
+    let y_clip = -2.0 * (y_px / canvas.height() as f32) + 1.0;
+
+    Vec2::new(x_clip, y_clip)
 }

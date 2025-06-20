@@ -1,15 +1,15 @@
 use super::vertex::Vertex;
 
-pub struct CpuMesh<'a> {
-    pub vertices: &'a[Vertex],
-    pub indices: &'a[u16],
+pub struct CpuMesh {
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<u16>,
     pub index_count: u32,
 }
 
-impl<'a> CpuMesh<'a> {
+impl CpuMesh {
     pub fn new(
-        vertices: &'a[Vertex],
-        indices:  &'a[u16],
+        vertices: Vec<Vertex>,
+        indices:  Vec<u16>,
     ) -> Self {
 
         let c = indices.len() as u32;

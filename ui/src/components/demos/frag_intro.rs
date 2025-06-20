@@ -37,8 +37,8 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
     }
 
     let mesh = CpuMesh::new(
-        meshes::quad::QUAD_VERTS,
-        meshes::quad::QUAD_INDICES,
+        meshes::quad::QUAD_VERTS.to_vec(),
+        meshes::quad::QUAD_INDICES.to_vec(),
     );
 
     let mesh = Rc::new(RefCell::new(mesh));
@@ -56,6 +56,7 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
         canvas_id,
 
         vec![make_default_rpass(mesh, proj)],
+        |_canvas: &web_sys::HtmlCanvasElement| {},
     );
 
     view! {

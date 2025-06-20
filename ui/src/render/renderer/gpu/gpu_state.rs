@@ -154,8 +154,8 @@ impl GpuState {
         mesh: &CpuMesh,
     ) {
         let sc = &self.surface_context;
-        self.vertex_buffer = create_vert_buff(sc, mesh.vertices);
-        self.index_buffer = create_idx_buff(sc, mesh.indices);
+        self.vertex_buffer = create_vert_buff(sc, mesh.vertices.as_slice());
+        self.index_buffer = create_idx_buff(sc, mesh.indices.as_slice());
         self.num_indices = mesh.index_count;
 
         let view_proj = match proj {
@@ -260,7 +260,7 @@ impl GpuState {
 }
 
 pub fn make_default_rpass(
-    mesh: Rc<RefCell<CpuMesh<'static>>>,
+    mesh: Rc<RefCell<CpuMesh>>,
     proj: Rc<RefCell<Projection>>,
 ) -> RenderPass {
     Rc::new(RefCell::new(move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
