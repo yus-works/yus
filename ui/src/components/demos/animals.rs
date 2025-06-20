@@ -7,106 +7,154 @@ use std::rc::Rc;
 
 use leptos::view;
 
+use super::utils;
+use super::utils::RenderPass;
 use crate::components::demo::make_pipeline_with_topology;
 use crate::meshes;
 use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::gpu_state::create_idx_buff;
-use crate::render::renderer::gpu::gpu_state::create_vert_buff;
-use crate::render::renderer::gpu::gpu_state::make_default_rpass;
+use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::FrameCtx;
 use crate::render::renderer::gpu::gpu_state::Projection;
-use crate::render::renderer::gpu::GpuState;
+use crate::render::renderer::gpu::gpu_state::create_idx_buff;
+use crate::render::renderer::gpu::gpu_state::create_vert_buff;
 use crate::render::renderer::mesh::CpuMesh;
 use leptos::IntoView;
 use leptos::component;
-use super::utils;
-use super::utils::RenderPass;
 
 use crate::render::renderer::vertex::Vertex;
 
 /// 5-vertex horizontal strip centred on Y=0 ( -1 ➜ +1 in clip-space )
 pub const STRIP_VERTS: &[Vertex] = &[
-    Vertex { position: [-1.0, -0.1, 0.0], normal: [0.,0.,1.], uv: [0.00, 0.0] },
-    Vertex { position: [-1.0,  0.1, 0.0], normal: [0.,0.,1.], uv: [0.00, 1.0] },
-    Vertex { position: [ 0.0, -0.1, 0.0], normal: [0.,0.,1.], uv: [0.50, 0.0] },
-    Vertex { position: [ 0.0,  0.1, 0.0], normal: [0.,0.,1.], uv: [0.50, 1.0] },
-    Vertex { position: [ 1.0, -0.1, 0.0], normal: [0.,0.,1.], uv: [1.00, 0.0] },
+    Vertex {
+        position: [-1.0, -0.1, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.00, 0.0],
+    },
+    Vertex {
+        position: [-1.0, 0.1, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.00, 1.0],
+    },
+    Vertex {
+        position: [0.0, -0.1, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.50, 0.0],
+    },
+    Vertex {
+        position: [0.0, 0.1, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.50, 1.0],
+    },
+    Vertex {
+        position: [1.0, -0.1, 0.0],
+        normal: [0., 0., 1.],
+        uv: [1.00, 0.0],
+    },
 ];
 
 /// two little quads (triangle-list) that sit flush against either end
 pub const END_VERTS: &[Vertex] = &[
     // -- left quad (-1.0 … -0.8) --
-    Vertex { position: [-1.00, -0.25, 0.0], normal:[0.,0.,1.], uv:[0.0,0.0] },
-    Vertex { position: [-0.80, -0.25, 0.0], normal:[0.,0.,1.], uv:[1.0,0.0] },
-    Vertex { position: [-0.80,  0.25, 0.0], normal:[0.,0.,1.], uv:[1.0,1.0] },
-    Vertex { position: [-1.00,  0.25, 0.0], normal:[0.,0.,1.], uv:[0.0,1.0] },
+    Vertex {
+        position: [-1.00, -0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.0, 0.0],
+    },
+    Vertex {
+        position: [-0.80, -0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [1.0, 0.0],
+    },
+    Vertex {
+        position: [-0.80, 0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [1.0, 1.0],
+    },
+    Vertex {
+        position: [-1.00, 0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.0, 1.0],
+    },
     // -- right quad ( +0.8 … +1.0 ) --
-    Vertex { position: [ 0.80, -0.25, 0.0], normal:[0.,0.,1.], uv:[0.0,0.0] },
-    Vertex { position: [ 1.00, -0.25, 0.0], normal:[0.,0.,1.], uv:[1.0,0.0] },
-    Vertex { position: [ 1.00,  0.25, 0.0], normal:[0.,0.,1.], uv:[1.0,1.0] },
-    Vertex { position: [ 0.80,  0.25, 0.0], normal:[0.,0.,1.], uv:[0.0,1.0] },
+    Vertex {
+        position: [0.80, -0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.0, 0.0],
+    },
+    Vertex {
+        position: [1.00, -0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [1.0, 0.0],
+    },
+    Vertex {
+        position: [1.00, 0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [1.0, 1.0],
+    },
+    Vertex {
+        position: [0.80, 0.25, 0.0],
+        normal: [0., 0., 1.],
+        uv: [0.0, 1.0],
+    },
 ];
 
 pub const END_INDICES: &[u16] = &[
-     0, 1, 2,   0, 2, 3,          // left
-     4, 5, 6,   4, 6, 7,          // right
+    0, 1, 2, 0, 2, 3, // left
+    4, 5, 6, 4, 6, 7, // right
 ];
 
-/// 1. horizontal 5-vertex triangle-strip
 pub fn make_strip_rpass() -> RenderPass {
     // keep vertex data around
     let mesh = CpuMesh::new(STRIP_VERTS, &[]);
-    let proj = Rc::new(RefCell::new(Projection::FlatQuad));
 
     // BLACKMAGIC: somehow this creates the pipeline only once
-    // lazy-init pipeline 
+    // lazy-init pipeline
     let pipeline: Rc<RefCell<Option<wgpu::RenderPipeline>>> = Rc::new(RefCell::new(None));
     let vs_src = include_str!("../../render/renderer/shaders/fish.vert.wgsl");
     let fs_src = include_str!("../../render/renderer/shaders/fish.frag.wgsl");
 
-    Rc::new(RefCell::new(move |st: &mut GpuState,
-                               _cam: &CameraInput,
-                               ctx: &mut FrameCtx| {
-        // one-time pipeline build
-        if pipeline.borrow().is_none() {
+    Rc::new(RefCell::new(
+        move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
+            // one-time pipeline build
+            if pipeline.borrow().is_none() {
+                console_log("building STRIP pipeline");
 
-            console_log("building STRIP pipeline");   // ← log here
+                let p = make_pipeline_with_topology(
+                    &st.surface_context.device,
+                    st.surface_context.config.format,
+                    wgpu::PrimitiveTopology::TriangleStrip,
+                    &vs_src,
+                    &fs_src,
+                );
+                *pipeline.borrow_mut() = Some(p);
+            }
 
-            let p = make_pipeline_with_topology(
-                &st.surface_context.device,
-                st.surface_context.config.format,
-                wgpu::PrimitiveTopology::TriangleStrip,
-                &vs_src, &fs_src
-            );
-            *pipeline.borrow_mut() = Some(p);
-        }
+            // upload verts (no indices because trianglestrip)
+            st.vertex_buffer = create_vert_buff(&st.surface_context, mesh.vertices);
+            st.num_indices = 0;
 
-        // upload verts (no indices)
-        st.vertex_buffer = create_vert_buff(&st.surface_context, mesh.vertices);
-        st.num_indices   = 0;
+            // draw
+            let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("strip pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &ctx.color_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                ..Default::default()
+            });
 
-        // draw
-        let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("strip pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &ctx.color_view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            ..Default::default()
-        });
-
-        rp.set_pipeline(pipeline.borrow().as_ref().unwrap());
-        rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
-        rp.draw(0..mesh.vertices.len() as u32, 0..1);
-    }))
+            rp.set_pipeline(pipeline.borrow().as_ref().unwrap());
+            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
+            rp.draw(0..mesh.vertices.len() as u32, 0..1);
+        },
+    ))
 }
 
-/// 2. two quads at the ends (triangle-list)
 pub fn make_end_quads_rpass() -> RenderPass {
     // verts + indices baked
     let mesh = CpuMesh::new(END_VERTS, END_INDICES);
@@ -116,44 +164,44 @@ pub fn make_end_quads_rpass() -> RenderPass {
     let vs_src = include_str!("../../render/renderer/shaders/fish.vert.wgsl");
     let fs_src = include_str!("../../render/renderer/shaders/fish.frag.wgsl");
 
-    Rc::new(RefCell::new(move |st: &mut GpuState,
-                               _cam: &CameraInput,
-                               ctx: &mut FrameCtx| {
-        if pipeline.borrow().is_none() {
-            let p = make_pipeline_with_topology(
-                &st.surface_context.device,
-                st.surface_context.config.format,
-                wgpu::PrimitiveTopology::TriangleList,
-                &vs_src, &fs_src
-            );
-            *pipeline.borrow_mut() = Some(p);
-        }
+    Rc::new(RefCell::new(
+        move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
+            if pipeline.borrow().is_none() {
+                let p = make_pipeline_with_topology(
+                    &st.surface_context.device,
+                    st.surface_context.config.format,
+                    wgpu::PrimitiveTopology::TriangleList,
+                    &vs_src,
+                    &fs_src,
+                );
+                *pipeline.borrow_mut() = Some(p);
+            }
 
-        st.vertex_buffer = create_vert_buff(&st.surface_context, mesh.vertices);
-        st.index_buffer  = create_idx_buff(&st.surface_context, mesh.indices);
-        st.num_indices   = mesh.index_count;
+            st.vertex_buffer = create_vert_buff(&st.surface_context, mesh.vertices);
+            st.index_buffer = create_idx_buff(&st.surface_context, mesh.indices);
+            st.num_indices = mesh.index_count;
 
-        let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("end-quads pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &ctx.color_view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            ..Default::default()
-        });
+            let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("end-quads pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &ctx.color_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                ..Default::default()
+            });
 
-        rp.set_pipeline(pipeline.borrow().as_ref().unwrap());
-        rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
-        rp.set_index_buffer(st.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        rp.draw_indexed(0..st.num_indices, 0, 0..1);
-    }))
+            rp.set_pipeline(pipeline.borrow().as_ref().unwrap());
+            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
+            rp.set_index_buffer(st.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            rp.draw_indexed(0..st.num_indices, 0, 0..1);
+        },
+    ))
 }
-
 
 #[component]
 pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
@@ -174,29 +222,16 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         });
     }
 
-    let mesh = CpuMesh::new(
-        meshes::quad::QUAD_VERTS,
-        meshes::quad::QUAD_INDICES,
-    );
-
-    let mesh = Rc::new(RefCell::new(mesh));
-
-    let proj = Rc::new(RefCell::new(Projection::FlatQuad));
+    let mesh = CpuMesh::new(meshes::quad::QUAD_VERTS, meshes::quad::QUAD_INDICES);
 
     utils::start_rendering(
         state_rc,
         camera_rc,
-
         show_hint,
         gpu_support,
-
         pending,
         canvas_id,
-
-        vec![
-            make_strip_rpass(),
-            make_end_quads_rpass()
-        ],
+        vec![make_strip_rpass(), make_end_quads_rpass()],
     );
 
     view! {
