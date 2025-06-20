@@ -74,9 +74,9 @@ fn Experiments() -> impl IntoView {
 
 #[component]
 fn ShaderLab() -> impl IntoView {
-    let selected_demo = RwSignal::new(Demo::CubePlanet);
-    let vs_src = RwSignal::new(include_str!("../../render/renderer/shaders/cube.vert.wgsl").to_owned());
-    let fs_src = RwSignal::new(include_str!("../../render/renderer/shaders/cube.frag.wgsl").to_owned());
+    let selected_demo = RwSignal::new(Demo::Animals);
+    let vs_src = RwSignal::new(include_str!("../../render/renderer/shaders/fish.vert.wgsl").to_owned());
+    let fs_src = RwSignal::new(include_str!("../../render/renderer/shaders/fish.frag.wgsl").to_owned());
 
     // whenever demo changes, push its shader pair into the two text signals
     Effect::new(move |_| {
@@ -93,8 +93,8 @@ fn ShaderLab() -> impl IntoView {
             </p>
 
             <ul id="demo-tabs" class="flex gap-4 mb-4 border-b text-text">
-                {Demo::CubePlanet  .labelled_button(selected_demo)}
                 {Demo::Animals     .labelled_button(selected_demo)}
+                {Demo::CubePlanet  .labelled_button(selected_demo)}
                 {Demo::FragIntro   .labelled_button(selected_demo)}
             </ul>
 
