@@ -21,9 +21,9 @@ fn time_sec() -> f32 {
 @fragment
 fn fs_main(i: VSOut) -> @location(0) vec4<f32> {
     // warm gradient just so we see something
-    var x = sin(i.uv.x + time_sec() * 10);
-    var y = sin(i.uv.y + time_sec() * 10);
-    var z = sin(i.uv.x + time_sec() * 10);
+    var x = sin(i.uv.x + time_sec() * 5);
+    var y = sin(i.uv.y + time_sec() * 5);
+    var z = sin(i.uv.x + time_sec() * 5);
 
-    return vec4f(x + 0.5, y + 0.1, 1.0, 1.0);
+    return vec4f(x * 0.8, y * 0.8, 0.6, 1.0);
 }

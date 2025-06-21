@@ -99,14 +99,24 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let pending = RwSignal::new(None::<(String, String)>);
 
     let points_rc: Rc<RefCell<Vec<Vec2>>> = Rc::new(RefCell::new(vec![
-        Vec2::new(-0.8, -0.8),
-        Vec2::new(-0.6, -0.7),
-        Vec2::new(-0.4, -0.6),
-        Vec2::new(-0.2, -0.5),
-        Vec2::new( 0.0, -0.4),
-        Vec2::new( 0.2, -0.3),
-        Vec2::new( 0.4, -0.2),
-        Vec2::new( 0.6, -0.1),
+        Vec2::new(-0.8, -0.7),
+        Vec2::new(-0.7, -0.6),
+        Vec2::new(-0.6, -0.5),
+        Vec2::new(-0.5, -0.4),
+        Vec2::new(-0.4, -0.3),
+        Vec2::new(-0.3, -0.2),
+        Vec2::new(-0.2, -0.1),
+        Vec2::new(-0.1,  0.0),
+        Vec2::new( 0.0,  0.1),
+        Vec2::new( 0.1,  0.2),
+        Vec2::new( 0.2,  0.3),
+        Vec2::new( 0.3,  0.4),
+        Vec2::new( 0.4,  0.5),
+        Vec2::new( 0.5,  0.6),
+        Vec2::new( 0.6,  0.7),
+        Vec2::new( 0.7,  0.8),
+        Vec2::new( 0.8,  0.9),
+        Vec2::new( 0.9,  1.0),
     ]));
 
     let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
@@ -135,7 +145,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         vec![strip_pipe],
 
         drag_tail_to_cursor(points_rc.clone()),
-        solve_chain(points_rc.clone(), 0.1, 9),
+        solve_chain(points_rc.clone(), 0.05, 9),
     );
 
     view! {
