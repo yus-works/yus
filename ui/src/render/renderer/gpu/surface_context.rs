@@ -24,6 +24,14 @@ impl SurfaceContext {
 
         let adapter = request_adapter(&instance, &surface).await?;
         let (device, queue) = request_device(&adapter).await?;
+
+        device.on_uncaptured_error(Box::new(|e| {
+            use wasm_bindgen::JsValue;
+            web_sys::console::error_1(
+                &JsValue::from_str(&format!("[WebGPU] uncaptured error: {e:?}"))
+            );
+        }));
+
         let surface_caps = surface.get_capabilities(&adapter);
 
         // NOTE: explicitly pick a non sRGB format because on WebGL the default is sRGB while on
