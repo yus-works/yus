@@ -204,33 +204,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         pending,
         canvas_id,
         vec![make_strip_rpass(points_rc.clone()), make_end_quads_rpass()],
-
-           {
-                let pts_master = points_rc.clone();          // one shared handle
-
-                move |canvas: &HtmlCanvasElement| {
-                    // one handle just for registering the listener (borrowed immutably)
-                    let canvas_ref = canvas.clone();
-
-                    // a second handle that the callback owns outright
-                    let canvas_owned = canvas.clone();
-
-                    let pts = pts_master.clone();
-
-                    utils::add_listener::<web_sys::PointerEvent, _>(
-                        &canvas_ref,                   // immutable borrow lives only for this call
-                        "pointerdown",
-                        move |e| {
-                            if e.button() != 0 { return; }
-
-                            // use the owned handle inside
-                            let p = to_clip_space(&e, &canvas_owned);
-                            pts.borrow_mut().push(p);
-                        },
-                    );
-                }
-            },
-
+        |_| {},
     );
 
     view! {
@@ -262,5 +236,31 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
 
           </Show>
         </div>
+    }
+}
+
+fn click_add_points(points_rc: Rc<RefCell<Vec<Vec2>>>) -> impl FnOnce(&HtmlCanvasElement) {
+    let pts_master = points_rc.clone();          // one shared handle
+
+    move |canvas: &HtmlCanvasElement| {
+        // one handle just for registering the listener (borrowed immutably)
+        let canvas_ref = canvas.clone();
+
+        // a second handle that the callback owns outright
+        let canvas_owned = canvas.clone();
+
+        let pts = pts_master.clone();
+
+        utils::add_listener::<web_sys::PointerEvent, _>(
+            &canvas_ref,                   // immutable borrow lives only for this call
+            "pointerdown",
+            move |e| {
+                if e.button() != 0 { return; }
+
+                // use the owned handle inside
+                let p = to_clip_space(&e, &canvas_owned);
+                pts.borrow_mut().push(p);
+            },
+        );
     }
 }
