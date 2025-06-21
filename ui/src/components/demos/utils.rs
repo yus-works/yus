@@ -16,21 +16,19 @@ use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
 
 use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::gpu_state::FrameCtx;
-use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::renderer::mesh::CpuMesh;
+use crate::render::renderer::gpu::gpu_state::FrameCtx;
 use crate::render::web_gpu::init_wgpu;
 use crate::render::web_gpu::reload_pipeline;
 
 /// true on PCs with a mouse/track-pad, false on touch devices
 pub fn is_desktop() -> bool {
     let win = web_sys::window().unwrap();
-    // ① media query: fine pointer ⇒ mouse/trackpad
     if let Ok(Some(mql)) = win.match_media("(pointer: fine)") {
-        if mql.matches() { return true; }
+        if mql.matches() {
+            return true;
+        }
     }
-    // ② fallback: no touch points ⇒ desktop
     win.navigator().max_touch_points() == 0
 }
 
@@ -184,7 +182,10 @@ pub fn add_camera_orbit(
     Ok(())
 }
 
-pub fn add_mousewheel_zoom(camera_input: &Rc<RefCell<Option<CameraInput>>>, canvas: &HtmlCanvasElement) -> Result<()> {
+pub fn add_mousewheel_zoom(
+    camera_input: &Rc<RefCell<Option<CameraInput>>>,
+    canvas: &HtmlCanvasElement,
+) -> Result<()> {
     if camera_input.clone().borrow().is_none() {
         return Err(anyhow!("Gpu state is None"));
     }
@@ -193,7 +194,6 @@ pub fn add_mousewheel_zoom(camera_input: &Rc<RefCell<Option<CameraInput>>>, canv
         camera_input.clone().borrow().is_some(),
         "GpuState is None and somehow passed the guard clause. This should not be possible."
     ); // now I can safely unwrap past this point
-
 
     let ci = camera_input.clone();
     add_listener(&canvas, "wheel", move |e: web_sys::WheelEvent| {
@@ -237,7 +237,7 @@ fn start_render_loop(
     pending: RwSignal<Option<(String, String)>>,
 
     rpasses: Vec<RenderPass>,
-    extra_pipes  : Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
+    extra_pipes: Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
 
     mut on_frame: impl 'static + FnMut(),
 ) {
@@ -251,15 +251,13 @@ fn start_render_loop(
         on_frame();
 
         // ── Run user passes --------------------------------------------------
-        if let (Some(state), Ok(cam_ref)) =
-            (state_rc.borrow_mut().as_mut(), camera_rc.try_borrow())
+        if let (Some(state), Ok(cam_ref)) = (state_rc.borrow_mut().as_mut(), camera_rc.try_borrow())
         {
             let cam = cam_ref.as_ref().expect("CameraInput is None");
 
             if let Some((vs_src, fs_src)) = pending.get_untracked() {
                 spawn_local(async move {
                     if let Ok(new_pipe) = reload_pipeline(&st, &vs_src, &fs_src).await {
-
                         if let Ok(mut guard) = st.try_borrow_mut() {
                             if let Some(st) = guard.as_mut() {
                                 st.pipeline = new_pipe;
@@ -285,15 +283,20 @@ fn start_render_loop(
         // ── Next frame -------------------------------------------------------
         web_sys::window()
             .unwrap()
-            .request_animation_frame(
-                raf.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
-            )
+            .request_animation_frame(raf.borrow().as_ref().unwrap().as_ref().unchecked_ref())
             .unwrap();
     }) as Box<dyn FnMut(f64)>));
 
     web_sys::window()
         .unwrap()
-        .request_animation_frame(raf_clone.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+        .request_animation_frame(
+            raf_clone
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unchecked_ref(),
+        )
         .unwrap();
 }
 
@@ -308,72 +311,70 @@ pub fn start_rendering<F, G>(
     canvas_id: &str,
 
     rpasses: Vec<RenderPass>,
-    extra_pipes  : Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
+    extra_pipes: Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
 
     on_canvas_ready: F, // extra closure after canvas is ready hook
-    on_frame: G, // extra closure to run every frame
+    on_frame: G,        // extra closure to run every frame
 ) where
     F: 'static + Fn(&HtmlCanvasElement) + Clone,
     G: 'static + FnMut() + Clone,
 {
-        let canvas_id = canvas_id.to_owned();
-        let on_canvas_ready = Rc::new(on_canvas_ready);
+    let canvas_id = canvas_id.to_owned();
+    let on_canvas_ready = Rc::new(on_canvas_ready);
+    let on_frame = on_frame.clone();
+
+    Effect::new(move |_| {
+        let state_rc_init = state_rc.clone();
+        let camera_rc_init = camera_rc.clone();
+
+        let pending = pending.clone();
+        let show_hint = show_hint.clone();
+        let gpu_support = gpu_support.clone();
+
+        let canvas_id = canvas_id.clone();
+
+        let rpasses_init = rpasses.clone();
+        let extra_pipes = extra_pipes.clone();
+
+        let on_ready = on_canvas_ready.clone();
         let on_frame = on_frame.clone();
 
-        Effect::new(move |_| {
-            let state_rc_init = state_rc.clone();
-            let camera_rc_init = camera_rc.clone();
+        spawn_local(async move {
+            TimeoutFuture::new(0).await;
 
-            let pending = pending.clone();
-            let show_hint = show_hint.clone();
-            let gpu_support = gpu_support.clone();
+            let canvas = match get_canvas(&canvas_id) {
+                Some(c) => c,
+                None => {
+                    web_sys::console::error_1(&"Canvas not found".into());
+                    return;
+                }
+            };
 
-            let canvas_id = canvas_id.clone();
+            // run user hook
+            (on_ready)(&canvas);
 
-            let rpasses_init = rpasses.clone();
-            let extra_pipes = extra_pipes.clone();
+            let state = match init_wgpu(&canvas).await {
+                Ok(s) => s,
+                Err(err) => {
+                    gpu_support.set(false);
+                    web_sys::console::error_1(&format!("WGPU init failed: {err:?}").into());
+                    return;
+                }
+            };
 
-            let on_ready = on_canvas_ready.clone();
-            let on_frame = on_frame.clone();
+            *state_rc_init.borrow_mut() = Some(state);
+            *camera_rc_init.borrow_mut() = Some(CameraInput::default());
 
-            spawn_local(async move {
-                TimeoutFuture::new(0).await;
+            add_input_handlers(&camera_rc_init, &canvas, show_hint);
 
-                let canvas = match get_canvas(&canvas_id) {
-                    Some(c) => c,
-                    None => {
-                        web_sys::console::error_1(&"Canvas not found".into());
-                        return;
-                    }
-                };
-
-                // run user hook
-                (on_ready)(&canvas);
-
-                let state = match init_wgpu(&canvas).await {
-                    Ok(s) => s,
-                    Err(err) => {
-                        gpu_support.set(false);
-                        web_sys::console::error_1(&format!("WGPU init failed: {err:?}").into());
-                        return;
-                    }
-                };
-
-                *state_rc_init.borrow_mut() = Some(state);
-                *camera_rc_init.borrow_mut() = Some(CameraInput::default());
-
-                add_input_handlers(&camera_rc_init, &canvas, show_hint);
-
-                start_render_loop(
-                    state_rc_init,
-                    camera_rc_init,
-                    pending,
-
-                    rpasses_init,
-                    extra_pipes,
-
-                    on_frame,
-                );
-            });
+            start_render_loop(
+                state_rc_init,
+                camera_rc_init,
+                pending,
+                rpasses_init,
+                extra_pipes,
+                on_frame,
+            );
         });
+    });
 }
