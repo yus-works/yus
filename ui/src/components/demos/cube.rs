@@ -50,7 +50,9 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
         show_hint, gpu_support,
         pending, canvas_id,
         vec![make_default_rpass(mesh, proj)],
-        |_canvas: &web_sys::HtmlCanvasElement| {},
+        vec![],
+        |_| {},
+        || {},
     );
 
     // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.

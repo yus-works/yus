@@ -1,9 +1,8 @@
 use glam::Vec2;
-use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Set, Show,
+    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show
 };
-use web_sys::HtmlCanvasElement;
+use web_sys::{HtmlCanvasElement, PointerEvent};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -11,98 +10,62 @@ use leptos::view;
 
 use super::utils;
 use super::utils::RenderPass;
-use crate::components::demo::{make_pipeline_with_topology, to_clip_space};
-use crate::meshes;
+use crate::components::demo::{make_pipe_with_topology_and_layout, to_clip_space};
 use crate::meshes::utils::stroke_polyline;
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
-use crate::render::renderer::gpu::gpu_state::FrameCtx;
-use crate::render::renderer::gpu::gpu_state::Projection;
-use crate::render::renderer::gpu::gpu_state::create_idx_buff;
+use crate::render::renderer::gpu::gpu_state::{FrameCtx, Projection};
 use crate::render::renderer::gpu::gpu_state::create_vert_buff;
-use crate::render::renderer::mesh::CpuMesh;
+use crate::render::renderer::mesh;
 use leptos::IntoView;
 use leptos::component;
 
-use crate::render::renderer::vertex::Vertex;
+pub fn make_strip_rpass(
+    points : Rc<RefCell<Vec<Vec2>>>,
+    vs_src : RwSignal<String>,
+    fs_src : RwSignal<String>,
+) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
+    let pipeline = Rc::new(RefCell::new(None));
 
-/// two little quads (triangle-list) that sit flush against either end
-pub const END_VERTS: &[Vertex] = &[
-    // -- left quad (-1.0 … -0.8) --
-    Vertex {
-        position: [-1.00, -0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-0.80, -0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [1.0, 0.0],
-    },
-    Vertex {
-        position: [-0.80, 0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [1.0, 1.0],
-    },
-    Vertex {
-        position: [-1.00, 0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [0.0, 1.0],
-    },
-    // -- right quad ( +0.8 … +1.0 ) --
-    Vertex {
-        position: [0.80, -0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [0.0, 0.0],
-    },
-    Vertex {
-        position: [1.00, -0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [1.0, 0.0],
-    },
-    Vertex {
-        position: [1.00, 0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [1.0, 1.0],
-    },
-    Vertex {
-        position: [0.80, 0.25, 0.0],
-        normal: [0., 0., 1.],
-        uv: [0.0, 1.0],
-    },
-];
+    // clone handles that must live inside the closure
+    let pipe_handle  = pipeline.clone();
+    let pts_handle   = points.clone();
+    let vs_handle    = vs_src.clone();
+    let fs_handle    = fs_src.clone();
 
-pub const END_INDICES: &[u16] = &[
-    0, 1, 2, 0, 2, 3, // left
-    4, 5, 6, 4, 6, 7, // right
-];
+    let pass = Rc::new(RefCell::new(
+        move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
 
-pub fn make_strip_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
-    let pipeline: Rc<RefCell<Option<wgpu::RenderPipeline>>> = Rc::new(RefCell::new(None));
+            st.populate_common_buffers(
+                &Projection::FlatQuad,
+                cam,
+                &mesh::CpuMesh::new(vec![], vec![])
+            );
 
-    Rc::new(RefCell::new(
-        move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
-            // 1. lazy-build pipeline ---------------------------------------------------------
-            if pipeline.borrow().is_none() {
-                let p = make_pipeline_with_topology(
+            let vs = vs_handle.get_untracked();
+            let fs = fs_handle.get_untracked();
+
+            // (re)build if missing
+            if pipe_handle.borrow().is_none() {
+                *pipe_handle.borrow_mut() = Some(make_pipe_with_topology_and_layout(
                     &st.surface_context.device,
                     st.surface_context.config.format,
                     wgpu::PrimitiveTopology::TriangleStrip,
-                    include_str!("../../render/renderer/shaders/fish.vert.wgsl"),
-                    include_str!("../../render/renderer/shaders/fish.frag.wgsl"),
-                );
-                *pipeline.borrow_mut() = Some(p);
+                    &[
+                        &st.resource_context.common_bind_group.layout.clone(),
+                    ],
+                    &vs,
+                    &fs,
+                ));
             }
 
-            // 2. build verts from current points --------------------------------------------
             let verts = {
-                let pts = points.borrow();
+                let pts = pts_handle.borrow();
                 stroke_polyline(&pts, 0.05)
             };
             st.vertex_buffer = create_vert_buff(&st.surface_context, &verts);
             st.num_indices   = 0;
 
-            // 3. draw -----------------------------------------------------------------------
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("polyline pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -117,60 +80,16 @@ pub fn make_strip_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
                 ..Default::default()
             });
 
-            rp.set_pipeline(pipeline.borrow().as_ref().unwrap());
+            rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
             rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
+            rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
             rp.draw(0..verts.len() as u32, 0..1);
         }
-    ))
+    ));
+
+    (pass, pipeline)
 }
 
-pub fn make_end_quads_rpass() -> RenderPass {
-    // verts + indices baked
-    let mesh = CpuMesh::new(END_VERTS.to_vec(), END_INDICES.to_vec());
-    let proj = Rc::new(RefCell::new(Projection::FlatQuad));
-
-    let pipeline: Rc<RefCell<Option<wgpu::RenderPipeline>>> = Rc::new(RefCell::new(None));
-    let vs_src = include_str!("../../render/renderer/shaders/fish.vert.wgsl");
-    let fs_src = include_str!("../../render/renderer/shaders/fish.frag.wgsl");
-
-    Rc::new(RefCell::new(
-        move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
-            if pipeline.borrow().is_none() {
-                let p = make_pipeline_with_topology(
-                    &st.surface_context.device,
-                    st.surface_context.config.format,
-                    wgpu::PrimitiveTopology::TriangleList,
-                    &vs_src,
-                    &fs_src,
-                );
-                *pipeline.borrow_mut() = Some(p);
-            }
-
-            st.vertex_buffer = create_vert_buff(&st.surface_context, mesh.vertices.as_slice());
-            st.index_buffer = create_idx_buff(&st.surface_context, mesh.indices.as_slice());
-            st.num_indices = mesh.index_count;
-
-            let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("end-quads pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &ctx.color_view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                ..Default::default()
-            });
-
-            rp.set_pipeline(pipeline.borrow().as_ref().unwrap());
-            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
-            rp.set_index_buffer(st.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            rp.draw_indexed(0..st.num_indices, 0, 0..1);
-        },
-    ))
-}
 
 #[component]
 pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
@@ -180,8 +99,14 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let pending = RwSignal::new(None::<(String, String)>);
 
     let points_rc: Rc<RefCell<Vec<Vec2>>> = Rc::new(RefCell::new(vec![
-        Vec2::new(-1.0, -1.0),
         Vec2::new(-0.8, -0.8),
+        Vec2::new(-0.6, -0.7),
+        Vec2::new(-0.4, -0.6),
+        Vec2::new(-0.2, -0.5),
+        Vec2::new( 0.0, -0.4),
+        Vec2::new( 0.2, -0.3),
+        Vec2::new( 0.4, -0.2),
+        Vec2::new( 0.6, -0.1),
     ]));
 
     let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
@@ -196,6 +121,8 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         });
     }
 
+    let (strip_pass, strip_pipe) = make_strip_rpass(points_rc.clone(), vs_src, fs_src);
+
     utils::start_rendering(
         state_rc,
         camera_rc,
@@ -203,8 +130,12 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         gpu_support,
         pending,
         canvas_id,
-        vec![make_strip_rpass(points_rc.clone()), make_end_quads_rpass()],
-        |_| {},
+
+        vec![strip_pass],
+        vec![strip_pipe],
+
+        drag_tail_to_cursor(points_rc.clone()),
+        solve_chain(points_rc.clone(), 0.1, 9),
     );
 
     view! {
@@ -262,5 +193,100 @@ fn click_add_points(points_rc: Rc<RefCell<Vec<Vec2>>>) -> impl FnOnce(&HtmlCanva
                 pts.borrow_mut().push(p);
             },
         );
+    }
+}
+
+fn solve_chain(
+    joints_rc : Rc<RefCell<Vec<Vec2>>>,
+    seg_len   : f32,
+    iterations: usize,
+) -> impl FnMut() + Clone {
+    move || {
+        let mut pts = joints_rc.borrow_mut();
+        for _ in 0..iterations {
+            for i in 1..pts.len() {
+                let dir  = pts[i] - pts[i - 1];
+                let dist = dir.length();
+                if dist != 0.0 {
+                    pts[i] = pts[i - 1] + dir * (seg_len / dist);
+                }
+            }
+        }
+    }
+}
+
+pub fn drag_tail_to_cursor(
+    points_rc: Rc<RefCell<Vec<Vec2>>>,
+) -> impl Fn(&HtmlCanvasElement) + Clone {
+    // `dragging` flag must be shareable by both inner callbacks
+    let dragging = Rc::new(RefCell::new(false));
+
+    // ── The outer closure ───────────────────────────────────────────────
+    // *no captures are moved*, only cloned -> implements Fn + Clone
+    move |canvas: &HtmlCanvasElement| {
+        // Quickly clone handles that will be moved into each listener
+        let pts_move      = points_rc.clone();
+        let pts_move2     = points_rc.clone();
+        let dragging_pd   = dragging.clone();
+        let dragging_mv   = dragging.clone();
+
+        // ----- POINTER-DOWN : start dragging & snap tail -----------------
+        {
+            // canvas_ref only borrowed for add_event_listener
+            let canvas_ref = canvas.clone();
+            let canvas_for_math = canvas.clone();     // moved into closure
+
+            utils::add_listener::<PointerEvent, _>(
+                &canvas_ref,
+                "pointerdown",
+                move |e| {
+                    if e.button() != 0 { return; }
+                    *dragging_pd.borrow_mut() = true;
+
+                    // initial snap
+                    let p = to_clip_space(&e, &canvas_for_math);
+                    if let Some(first) = pts_move.borrow_mut().first_mut() {
+                        *first = p;
+                    }
+                    e.prevent_default();
+                },
+            );
+        }
+
+        // pointer move : update tail while dragging
+        {
+            let canvas_ref = canvas.clone(); // for registering
+            let canvas_for_math = canvas.clone(); // moved in
+            utils::add_listener::<PointerEvent, _>(
+                &canvas_ref,
+                "pointermove",
+                move |e| {
+                    if !*dragging_mv.borrow() { return; }
+                    let p = to_clip_space(&e, &canvas_for_math);
+                    if let Some(first) = pts_move2.borrow_mut().first_mut() {
+                        *first = p;
+                    }
+                    e.prevent_default();
+                },
+            );
+        }
+
+        // pointer up
+        {
+            let canvas_ref = canvas.clone();
+            let dragging_up = dragging.clone();
+            utils::add_listener::<PointerEvent, _>(
+                &canvas_ref,
+                "pointerup",
+                move |_e| { *dragging_up.borrow_mut() = false; },
+            );
+            let canvas_ref = canvas.clone();
+            let dragging_leave = dragging.clone();
+            utils::add_listener::<PointerEvent, _>(
+                &canvas_ref,
+                "pointerleave",
+                move |_e| { *dragging_leave.borrow_mut() = false; },
+            );
+        }
     }
 }

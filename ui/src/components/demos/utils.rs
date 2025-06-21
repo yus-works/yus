@@ -235,28 +235,44 @@ fn start_render_loop(
     state_rc: Rc<RefCell<Option<GpuState>>>,
     camera_rc: Rc<RefCell<Option<CameraInput>>>,
     pending: RwSignal<Option<(String, String)>>,
+
     rpasses: Vec<RenderPass>,
+    extra_pipes  : Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
+
+    mut on_frame: impl 'static + FnMut(),
 ) {
     let raf: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
     let raf_clone = raf.clone();
 
     *raf_clone.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
-        // ── Hot‑reload -------------------------------------------------------
-        if let Some((vs, fs)) = pending.get_untracked() {
-            let st_clone = state_rc.clone();
-            spawn_local(async move {
-                if let Err(msg) = reload_pipeline(&st_clone, &vs, &fs).await {
-                    web_sys::console::error_1(&msg.to_string().into());
-                }
-            });
-            pending.set(None);
-        }
+        let pipes = extra_pipes.clone();
+        let st = state_rc.clone();
+
+        on_frame();
 
         // ── Run user passes --------------------------------------------------
         if let (Some(state), Ok(cam_ref)) =
             (state_rc.borrow_mut().as_mut(), camera_rc.try_borrow())
         {
             let cam = cam_ref.as_ref().expect("CameraInput is None");
+
+            if let Some((vs_src, fs_src)) = pending.get_untracked() {
+                spawn_local(async move {
+                    if let Ok(new_pipe) = reload_pipeline(&st, &vs_src, &fs_src).await {
+
+                        if let Ok(mut guard) = st.try_borrow_mut() {
+                            if let Some(st) = guard.as_mut() {
+                                st.pipeline = new_pipe;
+                            }
+                        }
+                        // invalidate every secondary pipeline
+                        for p in &pipes {
+                            *p.borrow_mut() = None;
+                        }
+                    }
+                })
+            }
+
             let mut ctx = state.begin_frame();
 
             for pass in &rpasses {
@@ -281,7 +297,7 @@ fn start_render_loop(
         .unwrap();
 }
 
-pub fn start_rendering<F>(
+pub fn start_rendering<F, G>(
     state_rc: Rc<RefCell<Option<GpuState>>>,
     camera_rc: Rc<RefCell<Option<CameraInput>>>,
 
@@ -292,12 +308,17 @@ pub fn start_rendering<F>(
     canvas_id: &str,
 
     rpasses: Vec<RenderPass>,
+    extra_pipes  : Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
+
     on_canvas_ready: F, // extra closure after canvas is ready hook
+    on_frame: G, // extra closure to run every frame
 ) where
     F: 'static + Fn(&HtmlCanvasElement) + Clone,
+    G: 'static + FnMut() + Clone,
 {
         let canvas_id = canvas_id.to_owned();
         let on_canvas_ready = Rc::new(on_canvas_ready);
+        let on_frame = on_frame.clone();
 
         Effect::new(move |_| {
             let state_rc_init = state_rc.clone();
@@ -310,8 +331,10 @@ pub fn start_rendering<F>(
             let canvas_id = canvas_id.clone();
 
             let rpasses_init = rpasses.clone();
+            let extra_pipes = extra_pipes.clone();
 
             let on_ready = on_canvas_ready.clone();
+            let on_frame = on_frame.clone();
 
             spawn_local(async move {
                 TimeoutFuture::new(0).await;
@@ -341,7 +364,16 @@ pub fn start_rendering<F>(
 
                 add_input_handlers(&camera_rc_init, &canvas, show_hint);
 
-                start_render_loop(state_rc_init, camera_rc_init, pending, rpasses_init);
+                start_render_loop(
+                    state_rc_init,
+                    camera_rc_init,
+                    pending,
+
+                    rpasses_init,
+                    extra_pipes,
+
+                    on_frame,
+                );
             });
         });
 }

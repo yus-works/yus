@@ -56,7 +56,9 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
         canvas_id,
 
         vec![make_default_rpass(mesh, proj)],
-        |_canvas: &web_sys::HtmlCanvasElement| {},
+        vec![],
+        |_| {},
+        || {},
     );
 
     view! {

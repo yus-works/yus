@@ -10,6 +10,7 @@ use web_sys::HtmlCanvasElement;
 use crate::meshes;
 use crate::render::renderer::gpu::utils::*;
 use crate::render::renderer::instance::InstanceRaw;
+use crate::render::renderer::vertex::Vertex;
 use glam::Mat4;
 use glam::Vec3;
 use crate::render::renderer::vertex;
@@ -22,51 +23,70 @@ use super::renderer::gpu::resource_context::ResourceContext;
 use super::renderer::gpu::surface_context::SurfaceContext;
 
 pub async fn reload_pipeline(
-    state: &Rc<RefCell<Option<GpuState>>>,
+    state_rc: &Rc<RefCell<Option<GpuState>>>,
     vs_src: &str,
     fs_src: &str,
-) -> anyhow::Result<()> {
-    use std::borrow::Cow;
+) -> anyhow::Result<wgpu::RenderPipeline> {
+    use wgpu::ErrorFilter as F;
 
     let (layout, config, device) = {
-        let guard = state
-            .try_borrow()
-            .map_err(|_| anyhow!("GpuState busy"))?;
-
-        let st = guard.as_ref().ok_or(anyhow!("GpuState is None"))?;
-        let dev = st.surface_context.device.clone();
-
+        let guard = state_rc.borrow();
+        let st = guard.as_ref()
+            .ok_or_else(|| anyhow!("GpuState is None"))?;
         (
-            st.resource_context.pipeline_layout(&dev),
+            st.resource_context.pipeline_layout(&st.surface_context.device),
             st.surface_context.config.clone(),
-            dev,
+            st.surface_context.device.clone(),
         )
-    }; // guard dropped
+    };
 
-    device.push_error_scope(wgpu::ErrorFilter::Validation);
+    device.push_error_scope(F::Validation);
 
     let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label:  Some("live VS shader"),
-        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(vs_src)),
+        label: Some("live-reload VS"),
+        source: wgpu::ShaderSource::Wgsl(vs_src.into()),
     });
-
     let fs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label:  Some("live FS shader"),
-        source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(fs_src)),
+        label: Some("live-reload FS"),
+        source: wgpu::ShaderSource::Wgsl(fs_src.into()),
     });
 
-    let new_pipeline = create_pipeline(&device, &config, &layout, &VertexShader(vs), &FragmentShader(fs));
+    let promise = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("live-reload pipeline"),
+        layout: Some(&layout),
+        cache: None,
+        vertex: wgpu::VertexState {
+            module: &vs,
+            entry_point: Some("vs_main"),
+            buffers: &[Vertex::desc()],
+            compilation_options: Default::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &fs,
+            entry_point: Some("fs_main"),
+            targets: &[Some(wgpu::ColorTargetState {
+                format: config.format,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: Default::default(),
+        }),
+        primitive: Default::default(),
+        depth_stencil: Some(wgpu::DepthStencilState{
+            format: wgpu::TextureFormat::Depth32Float,
+            depth_write_enabled: false,   // or true – doesn’t matter for flat-quad
+            depth_compare: wgpu::CompareFunction::Always,
+            stencil: Default::default(),
+            bias: Default::default(),
+        }),
 
-    // await after every borrow has been let go
+        multisample: Default::default(),
+        multiview: None,
+    });
+
+    let new_pipe = promise;
     match device.pop_error_scope().await {
-        None => {
-            if let Ok(mut guard) = state.try_borrow_mut() { // only then do mutable borrow
-                if let Some(st) = guard.as_mut() {
-                    st.pipeline = new_pipeline;
-                }
-            }
-            Ok(())
-        }
+        None => Ok(new_pipe),
         Some(err) => Err(anyhow!(err.to_string())),
     }
 }

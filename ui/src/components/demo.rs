@@ -74,10 +74,11 @@ impl DemoTab for Demo {
     }
 }
 
-pub fn make_pipeline_with_topology(
+pub fn make_pipe_with_topology_and_layout(
     device: &wgpu::Device,
     format: wgpu::TextureFormat,
     topology: wgpu::PrimitiveTopology,
+    layouts: &[&wgpu::BindGroupLayout],
     vs_src: &str,
     fs_src: &str,
 ) -> wgpu::RenderPipeline {
@@ -93,7 +94,7 @@ pub fn make_pipeline_with_topology(
 
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("empty layout"),
-        bind_group_layouts: &[],
+        bind_group_layouts: layouts,
         push_constant_ranges: &[],
     });
 
