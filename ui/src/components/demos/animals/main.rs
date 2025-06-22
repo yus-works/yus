@@ -1,24 +1,32 @@
-use glam::Vec2;
-use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GetUntracked, GlobalAttributes, RwSignal, Set, Show,
+use leptos::{
+    IntoView, component,
+    prelude::{Effect, Get, GetUntracked, RwSignal, Set},
 };
-use std::cell::RefCell;
-use std::rc::Rc;
+
 use web_sys::{HtmlCanvasElement, PointerEvent};
 
-use leptos::view;
+use glam::Vec2;
+use std::{cell::RefCell, rc::Rc};
 
-use crate::components::demo::{make_pipe_with_topology_and_layout, to_clip_space};
-use crate::components::demos::utils::{add_listener, start_rendering, RenderPass, WebGPUNotSupportedMsg};
-use crate::meshes;
+use crate::{
+    components::{
+        demo::{make_pipe_with_topology_and_layout, to_clip_space},
+        demos::utils::{RenderPass, add_listener, start_rendering},
+    },
+    meshes,
+};
+
+use crate::render::renderer::{
+    camera_input::CameraInput,
+    gpu::{
+        GpuState,
+        gpu_state::create_vert_buff,
+        gpu_state::{FrameCtx, Projection},
+    },
+    mesh,
+};
+
 use crate::meshes::utils::stroke_polyline;
-use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::GpuState;
-use crate::render::renderer::gpu::gpu_state::create_vert_buff;
-use crate::render::renderer::gpu::gpu_state::{FrameCtx, Projection};
-use crate::render::renderer::mesh;
-use leptos::IntoView;
-use leptos::component;
 
 pub fn make_strip_rpass(
     points: Rc<RefCell<Vec<Vec2>>>,
@@ -87,10 +95,10 @@ pub fn make_strip_rpass(
     (pass, pipeline)
 }
 
+pub(crate) const CANVAS_ID: &str = "animals-canvas";
+
 #[component]
 pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
-    let canvas_id = "animals-demo-canvas";
-
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
     let pending = RwSignal::new(None::<(String, String)>);
 
@@ -116,43 +124,14 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         show_hint,
         gpu_support,
         pending,
-        canvas_id,
+        CANVAS_ID,
         vec![strip_pass],
         vec![strip_pipe],
         drag_head_to_cursor(points_rc.clone()),
         solve_chain(points_rc.clone(), 0.05, 9),
     );
 
-    view! {
-        <div class="relative w-full group">
-          <Show
-            when=move || matches!(gpu_support.get(), true)
-            fallback=move || view! { <WebGPUNotSupportedMsg/> }
-          >
-
-          <canvas
-            id=canvas_id
-            width="800"
-            height="800"
-            class="w-full h-full object-cover touch-none select-none"
-          ></canvas>
-
-          <Show when=move || show_hint.get()>
-              <div id="hint"
-                   class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center
-                          bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
-                          transition-opacity duration-500
-                          group-hover:opacity-0">
-                ""
-                <p>"Click & drag to rotate camera ✋"</p>
-                <p>"Scroll or pinch to zoom 🖱️/🤏"</p>
-                <strong>"Click to hide this hint"</strong>
-              </div>
-          </Show>
-
-          </Show>
-        </div>
-    }
+    super::view::canvas(gpu_support, show_hint);
 }
 
 fn click_add_points(points_rc: Rc<RefCell<Vec<Vec2>>>) -> impl FnOnce(&HtmlCanvasElement) {
