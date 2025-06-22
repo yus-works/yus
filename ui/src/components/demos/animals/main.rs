@@ -1,6 +1,5 @@
 use leptos::{
-    IntoView, component,
-    prelude::{Effect, Get, RwSignal, Set},
+    component, prelude::{Effect, Get, RwSignal, Set}, view, IntoView
 };
 
 use glam::Vec2;
@@ -50,5 +49,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         solve_chain(points_rc.clone(), 0.05, 9),
     );
 
-    super::view::canvas(gpu_support, show_hint);
+    view! {
+        { super::view::canvas(gpu_support, show_hint) }
+    }
 }
