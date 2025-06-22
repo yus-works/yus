@@ -1,5 +1,5 @@
-use glam::Vec2;
 use crate::render::renderer::vertex::Vertex;
+use glam::Vec2;
 
 /// Extrude a 2-D poly-line into a triangle-strip line of constant thickness.
 ///
@@ -22,10 +22,13 @@ pub fn stroke_polyline(points: &[Vec2], width: f32) -> Vec<Vertex> {
     for (i, &p) in points.iter().enumerate() {
         // 1. tangent
         let t = if i == 0 {
+            // look forward
             (points[1] - p).normalize()
         } else if i == points.len() - 1 {
+            // look backward
             (p - points[i - 1]).normalize()
         } else {
+            // average
             (points[i + 1] - points[i - 1]).normalize()
         };
 
@@ -33,7 +36,7 @@ pub fn stroke_polyline(points: &[Vec2], width: f32) -> Vec<Vertex> {
         let n = Vec2::new(-t.y, t.x);
 
         // 3. two extruded verts
-        let left  = p + n * half_w;
+        let left = p + n * half_w;
         let right = p - n * half_w;
 
         // 4. running-length-based U coord
@@ -41,14 +44,14 @@ pub fn stroke_polyline(points: &[Vec2], width: f32) -> Vec<Vertex> {
 
         // Push L then R
         out.push(Vertex {
-            position: [left.x,  left.y, 0.0],
-            normal:   [0.0, 0.0, 1.0],
-            uv:       [u, 0.0],
+            position: [left.x, left.y, 0.0],
+            normal: [0.0, 0.0, 1.0],
+            uv: [u, 0.0],
         });
         out.push(Vertex {
             position: [right.x, right.y, 0.0],
-            normal:   [0.0, 0.0, 1.0],
-            uv:       [u, 1.0],
+            normal: [0.0, 0.0, 1.0],
+            uv: [u, 1.0],
         });
     }
 
