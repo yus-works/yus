@@ -5,7 +5,7 @@ use wgpu::util::DeviceExt;
 use glam::Mat4;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
-use crate::{components::demos::utils::RenderPass, render::renderer::{camera_input::CameraInput, mesh::CpuMesh, vertex::Vertex}};
+use crate::{components::demos::utils::RenderPass, render::renderer::{camera_input::CameraInput, instance::InstanceRaw, mesh::CpuMesh, vertex::Vertex}};
 
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
@@ -49,6 +49,15 @@ pub fn create_idx_buff(sc: &SurfaceContext, indices: &[u16]) -> wgpu::Buffer {
         label: Some("Index Buffer"),
         contents: bytemuck::cast_slice(indices),
         usage: wgpu::BufferUsages::INDEX,
+    })
+}
+
+pub fn create_instance_buff(sc: &SurfaceContext, capacity: usize) -> wgpu::Buffer {
+    sc.device.create_buffer(&wgpu::BufferDescriptor {
+        label:  Some("Instance buffer"),
+        size:   (capacity * std::mem::size_of::<InstanceRaw>()) as u64,
+        usage:  wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
     })
 }
 
