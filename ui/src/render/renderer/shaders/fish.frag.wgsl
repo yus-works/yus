@@ -1,13 +1,13 @@
 struct VSOut {
-    @builtin(position) Position : vec4<f32>,
-    @location(0)      uv        : vec2<f32>,
+    @builtin(position) Position: vec4<f32>,
+    @location(0)      uv: vec2<f32>,
 };
 
 struct TimeUBO {
-    millis     : u32,   // 0-999
-    secs       : u32,   // whole seconds
-    dt_millis  : u32,   // last-frame Δ in ms
-    frame_id   : u32,   // ++ every render()
+    millis: u32,   // 0-999
+    secs: u32,   // whole seconds
+    dt_millis: u32,   // last-frame Δ in ms
+    frame_id: u32,   // ++ every render()
 };
 
 @group(0) @binding(0)
@@ -18,12 +18,20 @@ fn time_sec() -> f32 {
     return f32(g_time.secs) + f32(g_time.millis) * 0.001;
 }
 
+fn triangle_wave(x: f32) -> f32 {
+    return abs(x * 2 - 1);
+}
+
 @fragment
 fn fs_main(i: VSOut) -> @location(0) vec4<f32> {
-    // warm gradient just so we see something
-    var x = sin(i.uv.x + time_sec() * 5);
-    var y = sin(i.uv.y + time_sec() * 5);
-    var z = sin(i.uv.x + time_sec() * 5);
+    let t = time_sec();
+    let speed = 0.2;
+    let phase = triangle_wave(fract(i.uv.x - t * speed));
 
-    return vec4f(x * 0.8, y * 0.8, 0.6, 1.0);
+    let colorA = vec3<f32>(0.96, 0.30, 0.10);
+    let colorB = vec3<f32>(0.10, 0.30, 0.96);
+
+    let rgb = mix(colorA, colorB, phase);
+
+    return vec4(rgb, 1.0);
 }
