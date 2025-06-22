@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-pub fn make_strip_rpass(
+pub(crate) fn make_strip_rpass(
     points: Rc<RefCell<Vec<Vec2>>>,
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
