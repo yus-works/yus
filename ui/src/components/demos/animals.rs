@@ -11,6 +11,7 @@ use leptos::view;
 use super::utils;
 use super::utils::RenderPass;
 use crate::components::demo::{make_pipe_with_topology_and_layout, to_clip_space};
+use crate::meshes;
 use crate::meshes::utils::stroke_polyline;
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::gpu_state::create_vert_buff;
@@ -94,26 +95,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
     let pending = RwSignal::new(None::<(String, String)>);
 
-    let points_rc: Rc<RefCell<Vec<Vec2>>> = Rc::new(RefCell::new(vec![
-        Vec2::new(-0.8, -0.7),
-        Vec2::new(-0.7, -0.6),
-        Vec2::new(-0.6, -0.5),
-        Vec2::new(-0.5, -0.4),
-        Vec2::new(-0.4, -0.3),
-        Vec2::new(-0.3, -0.2),
-        Vec2::new(-0.2, -0.1),
-        Vec2::new(-0.1, 0.0),
-        Vec2::new(0.0, 0.1),
-        Vec2::new(0.1, 0.2),
-        Vec2::new(0.2, 0.3),
-        Vec2::new(0.3, 0.4),
-        Vec2::new(0.4, 0.5),
-        Vec2::new(0.5, 0.6),
-        Vec2::new(0.6, 0.7),
-        Vec2::new(0.7, 0.8),
-        Vec2::new(0.8, 0.9),
-        Vec2::new(0.9, 1.0),
-    ]));
+    let points_rc: Rc<RefCell<Vec<Vec2>>> = Rc::new(RefCell::new(meshes::strip::worm()));
 
     let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
 
