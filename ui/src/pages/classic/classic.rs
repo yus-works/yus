@@ -7,7 +7,7 @@ use leptos::prelude::RwSignal;
 use leptos::{IntoView, component};
 
 use crate::components::demo::{Demo, DemoTab};
-use crate::components::demos::shader_editor::ShaderEditor;
+use crate::components::shader_editor::ShaderEditor;
 
 #[component]
 fn Hero() -> impl IntoView {

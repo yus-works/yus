@@ -6,7 +6,8 @@ use std::rc::Rc;
 
 use leptos::view;
 
-use super::utils;
+use crate::components::demos::utils::start_rendering;
+use crate::components::demos::utils::WebGPUNotSupportedMsg;
 use crate::meshes;
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
@@ -17,8 +18,8 @@ use leptos::IntoView;
 use leptos::component;
 
 #[component]
-pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
-    let canvas_id = "cube-demo-canvas";
+pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
+    let canvas_id = "animals-demo-canvas";
 
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
     let pending = RwSignal::new(None::<(String, String)>);
@@ -36,15 +37,15 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
     }
 
     let mesh = CpuMesh::new(
-        meshes::cube::CUBE_VERTICES.to_vec(),
-        meshes::cube::CUBE_INDICES.to_vec(),
+        meshes::quad::QUAD_VERTS.to_vec(),
+        meshes::quad::QUAD_INDICES.to_vec(),
     );
 
     let mesh = Rc::new(RefCell::new(mesh));
 
-    let proj = Rc::new(RefCell::new(Projection::Fulcrum));
+    let proj = Rc::new(RefCell::new(Projection::FlatQuad));
 
-    utils::start_rendering(
+    start_rendering(
         state_rc,
         camera_rc,
         show_hint,
@@ -57,12 +58,11 @@ pub fn CubePlanet(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl In
         || {},
     );
 
-    // 5) return the <canvas> in the view – Leptos mounts it, then our Effect hooks it.
     view! {
         <div class="relative w-full group">
           <Show
             when=move || matches!(gpu_support.get(), true)
-            fallback=move || view! { <utils::WebGPUNotSupportedMsg/> }
+            fallback=move || view! { <WebGPUNotSupportedMsg/> }
           >
 
           <canvas

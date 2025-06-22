@@ -12,7 +12,7 @@ use web_sys::{HtmlCanvasElement, HtmlElement, PointerEvent};
 
 use crate::render::renderer::vertex::Vertex;
 
-use super::demos::{animals::Animals, cube::CubePlanet, frag_intro::FragIntro};
+use super::demos::{animals::main::Animals, frag_intro::main::FragIntro, planet::main::CubePlanet};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Demo {

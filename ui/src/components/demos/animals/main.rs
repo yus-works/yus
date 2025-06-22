@@ -8,9 +8,8 @@ use web_sys::{HtmlCanvasElement, PointerEvent};
 
 use leptos::view;
 
-use super::utils;
-use super::utils::RenderPass;
 use crate::components::demo::{make_pipe_with_topology_and_layout, to_clip_space};
+use crate::components::demos::utils::{add_listener, start_rendering, RenderPass, WebGPUNotSupportedMsg};
 use crate::meshes;
 use crate::meshes::utils::stroke_polyline;
 use crate::render::renderer::camera_input::CameraInput;
@@ -111,7 +110,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
 
     let (strip_pass, strip_pipe) = make_strip_rpass(points_rc.clone(), vs_src, fs_src);
 
-    utils::start_rendering(
+    start_rendering(
         state_rc,
         camera_rc,
         show_hint,
@@ -128,7 +127,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         <div class="relative w-full group">
           <Show
             when=move || matches!(gpu_support.get(), true)
-            fallback=move || view! { <utils::WebGPUNotSupportedMsg/> }
+            fallback=move || view! { <WebGPUNotSupportedMsg/> }
           >
 
           <canvas
@@ -168,7 +167,7 @@ fn click_add_points(points_rc: Rc<RefCell<Vec<Vec2>>>) -> impl FnOnce(&HtmlCanva
 
         let pts = pts_master.clone();
 
-        utils::add_listener::<web_sys::PointerEvent, _>(
+        add_listener::<web_sys::PointerEvent, _>(
             &canvas_ref, // immutable borrow lives only for this call
             "pointerdown",
             move |e| {
@@ -221,7 +220,7 @@ pub fn drag_head_to_cursor(
             let canvas_ref = canvas.clone();
             let canvas_for_math = canvas.clone(); // moved into closure
 
-            utils::add_listener::<PointerEvent, _>(&canvas_ref, "pointerdown", move |e| {
+            add_listener::<PointerEvent, _>(&canvas_ref, "pointerdown", move |e| {
                 if e.button() != 0 {
                     return;
                 }
@@ -240,7 +239,7 @@ pub fn drag_head_to_cursor(
         {
             let canvas_ref = canvas.clone(); // for registering
             let canvas_for_math = canvas.clone(); // moved in
-            utils::add_listener::<PointerEvent, _>(&canvas_ref, "pointermove", move |e| {
+            add_listener::<PointerEvent, _>(&canvas_ref, "pointermove", move |e| {
                 if !*dragging_mv.borrow() {
                     return;
                 }
@@ -256,12 +255,12 @@ pub fn drag_head_to_cursor(
         {
             let canvas_ref = canvas.clone();
             let dragging_up = dragging.clone();
-            utils::add_listener::<PointerEvent, _>(&canvas_ref, "pointerup", move |_e| {
+            add_listener::<PointerEvent, _>(&canvas_ref, "pointerup", move |_e| {
                 *dragging_up.borrow_mut() = false;
             });
             let canvas_ref = canvas.clone();
             let dragging_leave = dragging.clone();
-            utils::add_listener::<PointerEvent, _>(&canvas_ref, "pointerleave", move |_e| {
+            add_listener::<PointerEvent, _>(&canvas_ref, "pointerleave", move |_e| {
                 *dragging_leave.borrow_mut() = false;
             });
         }

@@ -1,11 +1,10 @@
+use crate::components::demos::utils::is_desktop;
 use leptos::{
     control_flow::Show,
     component, html::Textarea, leptos_dom::logging::console_log, prelude::{
         event_target_value, signal, ClassAttribute, ElementChild, Get, NodeRef, NodeRefAttribute, OnAttribute, PropAttribute, RwSignal, Set
     }, view, IntoView
 };
-
-use super::utils;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum Mode {
@@ -38,7 +37,7 @@ fn vim_motion(textarea: &NodeRef<Textarea>, key: &str) {
     let start = t.selection_start().unwrap().unwrap();
 
     // TODO: add basic selections and line edits and shit
-    let end = t.selection_end().unwrap().unwrap();
+    let _end = t.selection_end().unwrap().unwrap();
 
     let mut pos = start; // treat both ends the same
 
@@ -103,7 +102,7 @@ fn vim_motion(textarea: &NodeRef<Textarea>, key: &str) {
 
 #[component]
 pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
-    let vim_enabled = utils::is_desktop();
+    let vim_enabled = is_desktop();
 
     let (active_tab, set_active_tab) = signal("VS");
 
