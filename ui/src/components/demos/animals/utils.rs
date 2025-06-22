@@ -5,12 +5,16 @@ use leptos::prelude::{GetUntracked, RwSignal};
 use web_sys::{HtmlCanvasElement, PointerEvent};
 
 use crate::{
-    components::{demo::{make_pipe_with_topology_and_layout, to_clip_space}, demos::utils::{add_listener, RenderPass}},
+    components::{
+        demo::{make_pipe_with_topology_and_layout, to_clip_space},
+        demos::utils::{RenderPass, add_listener},
+    },
     meshes::utils::stroke_polyline,
     render::renderer::{
         camera_input::CameraInput,
         gpu::{
-            gpu_state::{create_vert_buff, FrameCtx, Projection}, GpuState
+            GpuState,
+            gpu_state::{FrameCtx, Projection, create_vert_buff},
         },
         mesh,
     },
@@ -83,7 +87,9 @@ pub fn make_strip_rpass(
     (pass, pipeline)
 }
 
-pub(crate) fn click_add_points(points_rc: Rc<RefCell<Vec<Vec2>>>) -> impl FnOnce(&HtmlCanvasElement) {
+pub(crate) fn click_add_points(
+    points_rc: Rc<RefCell<Vec<Vec2>>>,
+) -> impl FnOnce(&HtmlCanvasElement) {
     let pts_master = points_rc.clone(); // one shared handle
 
     move |canvas: &HtmlCanvasElement| {
