@@ -14,12 +14,12 @@ use crate::components::demo::{make_pipe_with_topology_and_layout, to_clip_space}
 use crate::meshes;
 use crate::meshes::utils::stroke_polyline;
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::create_vert_buff;
 use crate::render::renderer::gpu::gpu_state::{FrameCtx, Projection};
-use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::mesh;
-use leptos::component;
 use leptos::IntoView;
+use leptos::component;
 
 pub fn make_strip_rpass(
     points: Rc<RefCell<Vec<Vec2>>>,
@@ -236,7 +236,7 @@ pub fn drag_head_to_cursor(
             });
         }
 
-        // pointer move : update tail while dragging
+        // pointer move : update head while dragging
         {
             let canvas_ref = canvas.clone(); // for registering
             let canvas_for_math = canvas.clone(); // moved in
