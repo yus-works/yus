@@ -120,7 +120,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         canvas_id,
         vec![strip_pass],
         vec![strip_pipe],
-        drag_tail_to_cursor(points_rc.clone()),
+        drag_head_to_cursor(points_rc.clone()),
         solve_chain(points_rc.clone(), 0.05, 9),
     );
 
@@ -203,7 +203,7 @@ fn solve_chain(
     }
 }
 
-pub fn drag_tail_to_cursor(
+pub fn drag_head_to_cursor(
     points_rc: Rc<RefCell<Vec<Vec2>>>,
 ) -> impl Fn(&HtmlCanvasElement) + Clone {
     // `dragging` flag must be shareable by both inner callbacks
