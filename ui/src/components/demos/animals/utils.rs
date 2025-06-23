@@ -6,80 +6,104 @@ use web_sys::{HtmlCanvasElement, PointerEvent};
 
 use crate::{
     components::{
-        demo::{make_custom_pipe, to_clip_space},
-        demos::utils::{add_listener, RenderPass},
+        demo::to_clip_space,
+        demos::utils::{RenderPass, add_listener},
     },
-    meshes::{quad::{QUAD_INDICES, QUAD_VERTS}, utils::stroke_polyline},
+    meshes::{
+        quad::{QUAD_INDICES, QUAD_VERTS},
+        utils::stroke_polyline,
+    },
     render::renderer::{
-        camera_input::CameraInput, gpu::{
-            gpu_state::{create_idx_buff, create_vert_buff, ensure_instance_capacity, FrameCtx, Projection}, GpuState
-        }, instance::InstanceRaw, mesh, vertex::Vertex
+        camera_input::CameraInput,
+        gpu::{
+            GpuState,
+            gpu_state::{
+                FrameCtx, Projection, create_idx_buff, create_vert_buff, ensure_instance_capacity,
+            },
+        },
+        instance::InstanceRaw,
+        mesh,
+        vertex::Vertex,
     },
 };
 
 fn make_joint_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPipeline {
     let color_target = Some(wgpu::ColorTargetState {
-        format: st.surface_context.config.format,             // same as the swap-chain
-        blend : Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+        format: st.surface_context.config.format, // same as the swap-chain
+        blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
         write_mask: wgpu::ColorWrites::ALL,
     });
 
-    let vs = st.surface_context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("vs shader with custom topology"),
-        source: wgpu::ShaderSource::Wgsl(vs_src.into()),
-    });
+    let vs = st
+        .surface_context
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("vs shader with custom topology"),
+            source: wgpu::ShaderSource::Wgsl(vs_src.into()),
+        });
 
-    let fs = st.surface_context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("fs shader with custom topology"),
-        source: wgpu::ShaderSource::Wgsl(fs_src.into()),
-    });
+    let fs = st
+        .surface_context
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("fs shader with custom topology"),
+            source: wgpu::ShaderSource::Wgsl(fs_src.into()),
+        });
 
-    let layout = st.surface_context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("spine layout"),
-        bind_group_layouts: &[&st.resource_context.common_bind_group.layout],
-        push_constant_ranges: &[],
-    });
+    let layout =
+        st.surface_context
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("spine layout"),
+                bind_group_layouts: &[&st.resource_context.common_bind_group.layout],
+                push_constant_ranges: &[],
+            });
 
-    st.surface_context.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("joints pipe"),
-        layout: Some(&layout),
-        cache: None,
-        vertex: wgpu::VertexState {
-            module: &vs,
-            entry_point: Some("joints_vs"),
-            buffers: &[Vertex::desc(), InstanceRaw::desc()],
-            compilation_options: Default::default(),
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &fs,
-            entry_point: Some("joints_fs"),
-            targets: &[color_target],
-            compilation_options: Default::default(),
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            ..Default::default()
-        },
-        depth_stencil: None,
-        multisample: Default::default(),
-        multiview: None,
-    })
-
+    st.surface_context
+        .device
+        .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("joints pipe"),
+            layout: Some(&layout),
+            cache: None,
+            vertex: wgpu::VertexState {
+                module: &vs,
+                entry_point: Some("joints_vs"),
+                buffers: &[Vertex::desc(), InstanceRaw::desc()],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &fs,
+                entry_point: Some("joints_fs"),
+                targets: &[color_target],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                ..Default::default()
+            },
+            depth_stencil: None,
+            multisample: Default::default(),
+            multiview: None,
+        })
 }
 
 /// Build one model matrix per joint.
 /// `big` is the diameter of the vertebra, `small` the joint size.
 fn build_instance_mats(points: &[Vec2], big: f32, small: f32) -> Vec<InstanceRaw> {
-    points.iter().enumerate().map(|(i, p)| {
-        let r = if i % 2 == 0 { big } else { small }; // even = vertebra, odd = joint
-        let model = Mat4::from_scale_rotation_translation(
-            Vec3::new(r, r, 1.0),   // xy-scale, no z-thickness
-            glam::Quat::IDENTITY,   // no rotation
-            Vec3::new(p.x, p.y, 0.) // clip-space translation
-        );
-        InstanceRaw::from_mat4(model)
-    }).collect()
+    points
+        .iter()
+        .enumerate()
+        .map(|(i, p)| {
+            let r = if i % 2 == 0 { big } else { small }; // even = vertebra, odd = joint
+            let model = Mat4::from_scale_rotation_translation(
+                Vec3::new(r, r, 1.0),    // xy-scale, no z-thickness
+                glam::Quat::IDENTITY,    // no rotation
+                Vec3::new(p.x, p.y, 0.), // clip-space translation
+            );
+            InstanceRaw::from_mat4(model)
+        })
+        .collect()
 }
 
 pub(crate) fn make_spine_rpass(
@@ -97,29 +121,29 @@ pub(crate) fn make_spine_rpass(
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
-
             // 1) lazy-init pipeline
             if pipe_handle.borrow().is_none() {
-                *pipe_handle.borrow_mut() = Some(
-                    make_joint_pipe(
-                        st,
-                        &vs_handle.get_untracked(),
-                        &fs_handle.get_untracked()
-                    )
-                );
+                *pipe_handle.borrow_mut() = Some(make_joint_pipe(
+                    st,
+                    &vs_handle.get_untracked(),
+                    &fs_handle.get_untracked(),
+                ));
             }
 
             // -- make sure the vertex buffer really is a quad --------------
-            if st.num_indices != 0 || st.vertex_buffer.size() != (QUAD_VERTS.len() * std::mem::size_of::<Vertex>()) as u64 {
+            if st.num_indices != 0
+                || st.vertex_buffer.size()
+                    != (QUAD_VERTS.len() * std::mem::size_of::<Vertex>()) as u64
+            {
                 st.vertex_buffer = create_vert_buff(&st.surface_context, QUAD_VERTS);
-                st.num_indices   = 0;                // non-indexed draw
+                st.num_indices = 0; // non-indexed draw
             }
 
             st.index_buffer = create_idx_buff(&st.surface_context, QUAD_INDICES);
-            st.num_indices  = QUAD_INDICES.len() as u32;
+            st.num_indices = QUAD_INDICES.len() as u32;
 
             let circle_pipe = pipe_handle.borrow();
-            let pipe_ref    = circle_pipe.as_ref().unwrap();
+            let pipe_ref = circle_pipe.as_ref().unwrap();
 
             // 2) produce fresh instance data
             let inst = build_instance_mats(&pts_handle.borrow(), 0.05, 0.02);
@@ -150,14 +174,74 @@ pub(crate) fn make_spine_rpass(
             });
 
             rp.set_pipeline(pipe_ref);
-            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));   // quad verts
+            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..)); // quad verts
             rp.set_vertex_buffer(1, st.instance_buffer.slice(..)); // per-instance
             rp.set_index_buffer(st.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
             rp.draw_indexed(0..st.num_indices, 0, 0..st.instance_count);
-        }));
+        },
+    ));
 
     (pass, pipeline)
+}
+
+fn make_bones_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPipeline {
+    let vs = st
+        .surface_context
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("animals vs"),
+            source: wgpu::ShaderSource::Wgsl(vs_src.into()),
+        });
+
+    let fs = st
+        .surface_context
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("animals fs"),
+            source: wgpu::ShaderSource::Wgsl(fs_src.into()),
+        });
+
+    let layout =
+        st.surface_context
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("bones layout"),
+                bind_group_layouts: &[&st.resource_context.common_bind_group.layout],
+                push_constant_ranges: &[],
+            });
+
+    st.surface_context
+        .device
+        .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("bones pipe"),
+            layout: Some(&layout),
+            cache: None,
+            vertex: wgpu::VertexState {
+                module: &vs,
+                entry_point: Some("bones_vs"),
+                buffers: &[Vertex::desc(), InstanceRaw::desc()],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &fs,
+                entry_point: Some("bones_fs"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: st.surface_context.config.format,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                ..Default::default()
+            },
+            depth_stencil: None,
+            multisample: Default::default(),
+            multiview: None,
+        })
 }
 
 pub(crate) fn make_strip_rpass(
@@ -186,18 +270,7 @@ pub(crate) fn make_strip_rpass(
 
             // (re)build if missing
             if pipe_handle.borrow().is_none() {
-                *pipe_handle.borrow_mut() = Some(make_custom_pipe(
-                    &st.surface_context.device,
-                    st.surface_context.config.format,
-                    &"bones pass",
-                    wgpu::PrimitiveTopology::TriangleStrip,
-                    &[&st.resource_context.common_bind_group.layout.clone()],
-                    &[Vertex::desc()],
-                    &vs,
-                    &fs,
-                    &"bones_vs",
-                    &"bones_fs",
-                ));
+                *pipe_handle.borrow_mut() = Some(make_bones_pipe(&st, &vs, &fs));
             }
 
             let verts = {

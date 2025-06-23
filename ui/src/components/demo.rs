@@ -78,64 +78,6 @@ impl DemoTab for Demo {
     }
 }
 
-pub fn make_custom_pipe(
-    device: &wgpu::Device,
-    format: wgpu::TextureFormat,
-    label: &str,
-    topology: wgpu::PrimitiveTopology,
-    bg_layouts: &[&wgpu::BindGroupLayout],
-    vs_layouts: &[wgpu::VertexBufferLayout],
-    vs_src: &str,
-    fs_src: &str,
-    vs_entry_point: &str,
-    fs_entry_point: &str,
-) -> wgpu::RenderPipeline {
-    let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("vs shader with custom topology"),
-        source: wgpu::ShaderSource::Wgsl(vs_src.into()),
-    });
-
-    let fs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("fs shader with custom topology"),
-        source: wgpu::ShaderSource::Wgsl(fs_src.into()),
-    });
-
-    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("empty layout"),
-        bind_group_layouts: bg_layouts,
-        push_constant_ranges: &[],
-    });
-
-    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some(label),
-        layout: Some(&layout),
-        cache: None,
-        vertex: wgpu::VertexState {
-            module: &vs,
-            entry_point: Some(vs_entry_point),
-            buffers: vs_layouts,
-            compilation_options: Default::default(),
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &fs,
-            entry_point: Some(fs_entry_point),
-            targets: &[Some(wgpu::ColorTargetState {
-                format,
-                blend: None,
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-            compilation_options: Default::default(),
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology,
-            ..Default::default()
-        },
-        depth_stencil: None,
-        multisample: Default::default(),
-        multiview: None,
-    })
-}
-
 pub fn to_clip_space(e: &PointerEvent, canvas: &HtmlCanvasElement) -> Vec2 {
     // 1) upcast to HtmlElement → gain get_bounding_client_rect()
     let html: &HtmlElement = canvas.unchecked_ref();
