@@ -1,21 +1,26 @@
 use std::{cell::RefCell, rc::Rc};
 
 use bytemuck::{Pod, Zeroable};
-use wgpu::util::DeviceExt;
 use glam::Mat4;
+use wgpu::util::DeviceExt;
 use wgpu::{CommandEncoder, StoreOp, TextureView};
 
-use crate::{components::demos::utils::RenderPass, render::renderer::{camera_input::CameraInput, instance::InstanceRaw, mesh::CpuMesh, vertex::Vertex}};
+use crate::{
+    components::demos::utils::RenderPass,
+    render::renderer::{
+        camera_input::CameraInput, instance::InstanceRaw, mesh::CpuMesh, vertex::Vertex,
+    },
+};
 
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 struct TimeUBO {
-    millis:     u32,
-    secs:       u32,
-    dt_ms:      u32,
-    frame_id:   u32,
+    millis: u32,
+    secs: u32,
+    dt_ms: u32,
+    frame_id: u32,
 }
 
 pub struct GpuState {
@@ -28,6 +33,7 @@ pub struct GpuState {
     pub num_indices: u32,
     pub instance_buffer: wgpu::Buffer,
     pub instance_count: u32,
+    pub instance_capacity: u32,
 
     pub start_ms: f64,
     pub prev_ms: f64, // since last frame
@@ -37,28 +43,40 @@ pub struct GpuState {
 }
 
 pub fn create_vert_buff(sc: &SurfaceContext, vertices: &[Vertex]) -> wgpu::Buffer {
-    sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Vertex Buffer"),
-        contents: bytemuck::cast_slice(vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    })
+    sc.device
+        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        })
 }
 
 pub fn create_idx_buff(sc: &SurfaceContext, indices: &[u16]) -> wgpu::Buffer {
-    sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Index Buffer"),
-        contents: bytemuck::cast_slice(indices),
-        usage: wgpu::BufferUsages::INDEX,
+    sc.device
+        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(indices),
+            usage: wgpu::BufferUsages::INDEX,
+        })
+}
+
+pub fn create_instance_buff(sc: &SurfaceContext, capacity: u32) -> wgpu::Buffer {
+    sc.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Instance buffer"),
+        size: (capacity * std::mem::size_of::<InstanceRaw>() as u32) as u64,
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
     })
 }
 
-pub fn create_instance_buff(sc: &SurfaceContext, capacity: usize) -> wgpu::Buffer {
-    sc.device.create_buffer(&wgpu::BufferDescriptor {
-        label:  Some("Instance buffer"),
-        size:   (capacity * std::mem::size_of::<InstanceRaw>()) as u64,
-        usage:  wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    })
+pub fn ensure_instance_capacity(st: &mut GpuState, needed: u32) {
+    if needed <= st.instance_capacity {
+        return;
+    }
+
+    let new_cap = needed.next_power_of_two();
+    st.instance_buffer = create_instance_buff(&st.surface_context, new_cap);
+    st.instance_capacity = new_cap;
 }
 
 pub enum Projection {
@@ -76,26 +94,26 @@ pub enum Projection {
 }
 
 pub struct FrameCtx {
-    pub frame:          wgpu::SurfaceTexture,
-    pub encoder:        wgpu::CommandEncoder,
-    pub color_view:     wgpu::TextureView,
-    pub depth_view:     wgpu::TextureView,
+    pub frame: wgpu::SurfaceTexture,
+    pub encoder: wgpu::CommandEncoder,
+    pub color_view: wgpu::TextureView,
+    pub depth_view: wgpu::TextureView,
 }
 
 impl FrameCtx {
     /// Open a render-pass, hand it to the user closure, then drop it.
     pub fn pass<'a, F>(&'a mut self, desc: wgpu::RenderPassDescriptor<'a>, f: F)
     where
-        F: FnOnce(&mut wgpu::RenderPass<'a>)
+        F: FnOnce(&mut wgpu::RenderPass<'a>),
     {
         let mut rp = self.encoder.begin_render_pass(&desc);
-        f(&mut rp);                 // user records whatever commands they want
+        f(&mut rp); // user records whatever commands they want
         // rp dropped here → render-pass ends
     }
 
     pub fn with_default_descriptor<F>(&mut self, clear: wgpu::Color, f: F)
     where
-        F: for<'a> FnOnce(&mut wgpu::RenderPass<'a>)
+        F: for<'a> FnOnce(&mut wgpu::RenderPass<'a>),
     {
         let view = self.color_view.clone();
         let depth = self.depth_view.clone();
@@ -136,32 +154,37 @@ impl GpuState {
     }
 
     pub fn resolution(&self) -> (f32, f32) {
-        (self.surface_context.config.width as f32, self.surface_context.config.height as f32)
+        (
+            self.surface_context.config.width as f32,
+            self.surface_context.config.height as f32,
+        )
     }
 
     /// Borrow-checked “begin frame” – returns a FrameCtx the caller can mutate.
     pub fn begin_frame(&mut self) -> FrameCtx {
         // 1) acquire swap-chain tex
-        let frame = self.surface_context.surface.get_current_texture().expect("swap-chain error");
-        let color_view  = frame.texture.create_view(&Default::default());
+        let frame = self
+            .surface_context
+            .surface
+            .get_current_texture()
+            .expect("swap-chain error");
+        let color_view = frame.texture.create_view(&Default::default());
 
         // 2) create an encoder for the caller
-        let encoder = self.surface_context.device.create_command_encoder(&Default::default());
+        let encoder = self
+            .surface_context
+            .device
+            .create_command_encoder(&Default::default());
 
         FrameCtx {
             frame,
             encoder,
             color_view,
-            depth_view : self.depth_view.clone(),
+            depth_view: self.depth_view.clone(),
         }
     }
 
-    pub fn populate_common_buffers(
-        &mut self,
-        proj: &Projection,
-        ci: &CameraInput,
-        mesh: &CpuMesh,
-    ) {
+    pub fn populate_common_buffers(&mut self, proj: &Projection, ci: &CameraInput, mesh: &CpuMesh) {
         let sc = &self.surface_context;
         self.vertex_buffer = create_vert_buff(sc, mesh.vertices.as_slice());
         self.index_buffer = create_idx_buff(sc, mesh.indices.as_slice());
@@ -171,11 +194,7 @@ impl GpuState {
             &Projection::FlatQuad => Mat4::IDENTITY,
             &Projection::Custom(m) => m,
             &Projection::Ortho2D { width, height } => {
-                Mat4::orthographic_rh_gl(
-                    0.0, width,
-                    height, 0.0,
-                    -1.0, 1.0,
-                )
+                Mat4::orthographic_rh_gl(0.0, width, height, 0.0, -1.0, 1.0)
             }
             &Projection::Fulcrum => {
                 let aspect = self.resolution().0 as f32 / self.resolution().1 as f32;
@@ -187,7 +206,8 @@ impl GpuState {
         };
 
         self.surface_context.queue.write_buffer(
-            &self.resource_context.camera_ubo, 0,
+            &self.resource_context.camera_ubo,
+            0,
             bytemuck::cast_slice(&view_proj.to_cols_array_2d()),
         );
 
@@ -201,20 +221,21 @@ impl GpuState {
 
         // ── time maths ────────────────────────────────
         let now_ms = web_sys::window().unwrap().performance().unwrap().now();
-        let dt_ms  = (now_ms - self.prev_ms) as u32;          // u32 fits 49 days
-        let secs   = (now_ms / 1000.0) as u32;
+        let dt_ms = (now_ms - self.prev_ms) as u32; // u32 fits 49 days
+        let secs = (now_ms / 1000.0) as u32;
         let millis = (now_ms as u32) % 1000;
 
         let payload = TimeUBO {
             millis,
             secs,
             dt_ms,
-            frame_id : self.frame_counter,
+            frame_id: self.frame_counter,
         };
 
         self.surface_context.queue.write_buffer(
-            &self.resource_context.time_ubo, 0,
-            bytemuck::bytes_of(&payload)
+            &self.resource_context.time_ubo,
+            0,
+            bytemuck::bytes_of(&payload),
         );
 
         self.frame_counter += 1;
@@ -223,10 +244,12 @@ impl GpuState {
 
     /// Finalise: submit & present.
     pub fn end_frame(&mut self, frame_ctx: FrameCtx) {
-        self.surface_context.queue.submit(Some(frame_ctx.encoder.finish()));
+        self.surface_context
+            .queue
+            .submit(Some(frame_ctx.encoder.finish()));
 
         // present after encoder is dropped so borrow checker is happy ?
-        drop(frame_ctx.color_view);      // no-op but clarifies intent
+        drop(frame_ctx.color_view); // no-op but clarifies intent
 
         // 4) submit + present
         frame_ctx.frame.present();
@@ -256,7 +279,7 @@ impl GpuState {
             timestamp_writes: None,
         });
         rpass.set_pipeline(&self.pipeline);
-        rpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));   // mesh verts
+        rpass.set_vertex_buffer(0, self.vertex_buffer.slice(..)); // mesh verts
         rpass.set_vertex_buffer(1, self.instance_buffer.slice(..)); // per-instance models
         rpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
@@ -268,12 +291,11 @@ impl GpuState {
     }
 }
 
-pub fn make_default_rpass(
-    mesh: Rc<RefCell<CpuMesh>>,
-    proj: Rc<RefCell<Projection>>,
-) -> RenderPass {
-    Rc::new(RefCell::new(move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
-        st.populate_common_buffers(&proj.borrow(), cam, &mesh.borrow());
-        st.default_rpass(&mut ctx.encoder, &ctx.color_view);
-    }))
+pub fn make_default_rpass(mesh: Rc<RefCell<CpuMesh>>, proj: Rc<RefCell<Projection>>) -> RenderPass {
+    Rc::new(RefCell::new(
+        move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
+            st.populate_common_buffers(&proj.borrow(), cam, &mesh.borrow());
+            st.default_rpass(&mut ctx.encoder, &ctx.color_view);
+        },
+    ))
 }

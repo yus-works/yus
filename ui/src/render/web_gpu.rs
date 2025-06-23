@@ -17,6 +17,7 @@ use crate::render::renderer::vertex;
 use web_sys;
 
 use super::renderer::gpu::gpu_state::create_idx_buff;
+use super::renderer::gpu::gpu_state::create_instance_buff;
 use super::renderer::gpu::gpu_state::create_vert_buff;
 use super::renderer::gpu::gpu_state::GpuState;
 use super::renderer::gpu::resource_context::ResourceContext;
@@ -168,12 +169,20 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         .map(InstanceRaw::from_mat4)
         .collect();
 
+    // init_wgpu()
+    let initial_capacity = 256;
+    let instance_buffer  = create_instance_buff(&sc, initial_capacity);
+
+    sc.queue.write_buffer(
+        &instance_buffer,
+        0,
+        bytemuck::cast_slice(&instances),
+    );
+
+    let instance_capacity  = initial_capacity;
+
     // TODO: allow instancing passthrouhg as well
-    let instance_buffer = sc.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Instance buffer"),
-        contents: bytemuck::cast_slice(&instances),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
+    let instance_buffer = create_instance_buff(&sc, instance_capacity);
     let instance_count = instances.len() as u32;
 
     let t0 = web_sys::window().unwrap().performance().unwrap().now();
@@ -193,6 +202,7 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         num_indices,
         instance_buffer,
         instance_count,
+        instance_capacity,
 
         start_ms: t0,
         prev_ms: t0,

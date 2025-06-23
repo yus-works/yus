@@ -4,6 +4,7 @@ use std::rc::Rc;
 use anyhow::Result;
 use anyhow::anyhow;
 use gloo_timers::future::TimeoutFuture;
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::Effect;
 use leptos::prelude::ElementChild;
@@ -14,6 +15,7 @@ use leptos::reactive::spawn_local;
 use leptos::{IntoView, component, view};
 use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
+use wgpu::RenderPipeline;
 
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
@@ -234,10 +236,8 @@ pub type RenderPass = Rc<RefCell<dyn FnMut(&mut GpuState, &CameraInput, &mut Fra
 fn start_render_loop(
     state_rc: Rc<RefCell<Option<GpuState>>>,
     camera_rc: Rc<RefCell<Option<CameraInput>>>,
-    pending: RwSignal<Option<(String, String)>>,
 
     rpasses: Vec<RenderPass>,
-    extra_pipes: Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
 
     mut on_frame: impl 'static + FnMut(),
 ) {
@@ -245,31 +245,12 @@ fn start_render_loop(
     let raf_clone = raf.clone();
 
     *raf_clone.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
-        let pipes = extra_pipes.clone();
-        let st = state_rc.clone();
-
         on_frame();
 
         // ── Run user passes --------------------------------------------------
         if let (Some(state), Ok(cam_ref)) = (state_rc.borrow_mut().as_mut(), camera_rc.try_borrow())
         {
             let cam = cam_ref.as_ref().expect("CameraInput is None");
-
-            if let Some((vs_src, fs_src)) = pending.get_untracked() {
-                spawn_local(async move {
-                    if let Ok(new_pipe) = reload_pipeline(&st, &vs_src, &fs_src).await {
-                        if let Ok(mut guard) = st.try_borrow_mut() {
-                            if let Some(st) = guard.as_mut() {
-                                st.pipeline = new_pipe;
-                            }
-                        }
-                        // invalidate every secondary pipeline
-                        for p in &pipes {
-                            *p.borrow_mut() = None;
-                        }
-                    }
-                })
-            }
 
             let mut ctx = state.begin_frame();
 
@@ -311,7 +292,7 @@ pub fn start_rendering<F, G>(
     canvas_id: &str,
 
     rpasses: Vec<RenderPass>,
-    extra_pipes: Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
+    pipes: Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
 
     on_canvas_ready: F, // extra closure after canvas is ready hook
     on_frame: G,        // extra closure to run every frame
@@ -327,14 +308,12 @@ pub fn start_rendering<F, G>(
         let state_rc_init = state_rc.clone();
         let camera_rc_init = camera_rc.clone();
 
-        let pending = pending.clone();
         let show_hint = show_hint.clone();
         let gpu_support = gpu_support.clone();
 
         let canvas_id = canvas_id.clone();
 
         let rpasses_init = rpasses.clone();
-        let extra_pipes = extra_pipes.clone();
 
         let on_ready = on_canvas_ready.clone();
         let on_frame = on_frame.clone();
@@ -370,9 +349,7 @@ pub fn start_rendering<F, G>(
             start_render_loop(
                 state_rc_init,
                 camera_rc_init,
-                pending,
                 rpasses_init,
-                extra_pipes,
                 on_frame,
             );
         });

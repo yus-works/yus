@@ -78,13 +78,17 @@ impl DemoTab for Demo {
     }
 }
 
-pub fn make_pipe_with_topology_and_layout(
+pub fn make_custom_pipe(
     device: &wgpu::Device,
     format: wgpu::TextureFormat,
+    label: &str,
     topology: wgpu::PrimitiveTopology,
-    layouts: &[&wgpu::BindGroupLayout],
+    bg_layouts: &[&wgpu::BindGroupLayout],
+    vs_layouts: &[wgpu::VertexBufferLayout],
     vs_src: &str,
     fs_src: &str,
+    vs_entry_point: &str,
+    fs_entry_point: &str,
 ) -> wgpu::RenderPipeline {
     let vs = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("vs shader with custom topology"),
@@ -98,23 +102,23 @@ pub fn make_pipe_with_topology_and_layout(
 
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("empty layout"),
-        bind_group_layouts: layouts,
+        bind_group_layouts: bg_layouts,
         push_constant_ranges: &[],
     });
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("custom strip pipeline"),
+        label: Some(label),
         layout: Some(&layout),
         cache: None,
         vertex: wgpu::VertexState {
             module: &vs,
-            entry_point: Some("vs_main"),
-            buffers: &[Vertex::desc()],
+            entry_point: Some(vs_entry_point),
+            buffers: vs_layouts,
             compilation_options: Default::default(),
         },
         fragment: Some(wgpu::FragmentState {
             module: &fs,
-            entry_point: Some("fs_main"),
+            entry_point: Some(fs_entry_point),
             targets: &[Some(wgpu::ColorTargetState {
                 format,
                 blend: None,

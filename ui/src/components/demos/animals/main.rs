@@ -1,5 +1,5 @@
 use leptos::{
-    component, prelude::{Effect, Get, RwSignal, Set}, view, IntoView
+    component, leptos_dom::logging::console_log, prelude::{Effect, Get, RwSignal, Set}, view, IntoView
 };
 
 use glam::Vec2;
@@ -11,7 +11,7 @@ use crate::{
     render::renderer::{camera_input::CameraInput, gpu::GpuState},
 };
 
-use super::utils::{drag_head_to_cursor, make_strip_rpass, solve_chain};
+use super::utils::{drag_head_to_cursor, make_strip_rpass, make_spine_rpass, solve_chain};
 
 pub(crate) const CANVAS_ID: &str = "animals-canvas";
 
@@ -27,14 +27,25 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let gpu_support = RwSignal::new(true);
     let show_hint = RwSignal::new(true);
 
+    let (strip_pass, strip_pipe) = make_strip_rpass(points_rc.clone(), vs_src, fs_src);
+    let (spine_pass, spine_pipe) = make_spine_rpass(points_rc.clone(), vs_src, fs_src);
+
     {
-        let pending = pending.clone();
+        let vs_src = vs_src.clone();
+        let fs_src = fs_src.clone();
+        let pipes = [
+            strip_pipe.clone(),
+            spine_pipe.clone()
+        ];
+
         Effect::new(move |_| {
-            pending.set(Some((vs_src.get(), fs_src.get())));
+            vs_src.get();
+            fs_src.get();
+            for p in &pipes {
+                *p.borrow_mut() = None;
+            }
         });
     }
-
-    let (strip_pass, strip_pipe) = make_strip_rpass(points_rc.clone(), vs_src, fs_src);
 
     start_rendering(
         state_rc,
@@ -43,10 +54,10 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         gpu_support,
         pending,
         CANVAS_ID,
-        vec![strip_pass],
-        vec![strip_pipe],
+        vec![strip_pass, spine_pass],
+        vec![strip_pipe, spine_pipe],
         drag_head_to_cursor(points_rc.clone()),
-        solve_chain(points_rc.clone(), 0.05, 9),
+        solve_chain(points_rc.clone(), 0.15, 9),
     );
 
     view! {
