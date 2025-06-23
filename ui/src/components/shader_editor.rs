@@ -129,7 +129,6 @@ pub fn ShaderEditor(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl 
     let focus_textarea = move |_| {
         if let Some(t) = textarea_ref.get() {
             t.focus().ok();
-            console_log("Hello gamers");
         }
     };
 
