@@ -58,7 +58,7 @@ pub(crate) fn make_strip_rpass(
 
             let verts = {
                 let pts = pts_handle.borrow();
-                stroke_polyline(&pts, 0.05)
+                stroke_polyline(&pts, 0.15)
             };
             st.vertex_buffer = create_vert_buff(&st.surface_context, &verts);
             st.num_indices = 0;
