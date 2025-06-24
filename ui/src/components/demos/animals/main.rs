@@ -1,5 +1,5 @@
 use leptos::{
-    component, leptos_dom::logging::console_log, prelude::{Effect, Get, RwSignal, Set}, view, IntoView
+    component, prelude::{Effect, Get, RwSignal}, view, IntoView
 };
 
 use glam::Vec2;
