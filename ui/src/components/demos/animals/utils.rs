@@ -90,12 +90,12 @@ fn make_joint_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
 
 /// Build one model matrix per joint.
 /// `big` is the diameter of the vertebra, `small` the joint size.
-fn build_instance_mats(points: &[Vec2], big: f32, small: f32) -> Vec<InstanceRaw> {
+fn build_instance_mats(points: &[Vec2], big: f32) -> Vec<InstanceRaw> {
     points
         .iter()
         .enumerate()
-        .map(|(i, p)| {
-            let r = if i % 2 == 0 { big } else { small }; // even = vertebra, odd = joint
+        .map(|(_, p)| {
+            let r = big;
             let model = Mat4::from_scale_rotation_translation(
                 Vec3::new(r, r, 1.0),    // xy-scale, no z-thickness
                 glam::Quat::IDENTITY,    // no rotation
@@ -146,7 +146,7 @@ pub(crate) fn make_spine_rpass(
             let pipe_ref = circle_pipe.as_ref().unwrap();
 
             // 2) produce fresh instance data
-            let inst = build_instance_mats(&pts_handle.borrow(), 0.05, 0.02);
+            let inst = build_instance_mats(&pts_handle.borrow(), 0.05);
             let needed = inst.len() as u32;
 
             ensure_instance_capacity(st, needed);
