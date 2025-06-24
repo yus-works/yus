@@ -220,7 +220,7 @@ fn make_bones_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
             vertex: wgpu::VertexState {
                 module: &vs,
                 entry_point: Some("bones_vs"),
-                buffers: &[Vertex::desc(), InstanceRaw::desc()],
+                buffers: &[Vertex::desc()],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -234,8 +234,7 @@ fn make_bones_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
                 compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
                 ..Default::default()
             },
             depth_stencil: None,
