@@ -38,6 +38,15 @@ macro_rules! simple_ubo_layout_entry {
   };
 }
 
+pub fn create_shader_module(label: &str, src: &str, dev: &wgpu::Device) -> wgpu::ShaderModule {
+    dev.create_shader_module(
+        wgpu::ShaderModuleDescriptor {
+            label: Some(label),
+            source: wgpu::ShaderSource::Wgsl(src.into()),
+        }
+    )
+}
+
 pub async fn request_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue)> {
     adapter.request_device(&wgpu::DeviceDescriptor {
         label: None,
