@@ -254,6 +254,9 @@ pub(crate) fn make_strip_rpass(
     let vs_handle = vs_src.clone();
     let fs_handle = fs_src.clone();
 
+    let vbuf_handle:  Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
+    let mut v_count = 0;
+
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
             st.populate_common_buffers(&Projection::FlatQuad, cam);
@@ -266,12 +269,22 @@ pub(crate) fn make_strip_rpass(
                 *pipe_handle.borrow_mut() = Some(make_bones_pipe(&st, &vs, &fs));
             }
 
-            let verts = {
-                let pts = pts_handle.borrow();
-                stroke_polyline(&pts, 0.15)
-            };
-            st.vertex_buffer = create_vert_buff_init(&st.surface_context, &verts);
-            st.num_indices = 0;
+            if vbuf_handle.borrow().is_none() {
+                let verts = {
+                    let pts = pts_handle.borrow();
+                    stroke_polyline(&pts, 0.15)
+                };
+
+                // NOTE: no indices needed because this is a strip
+                st.num_indices = 0;
+
+                *vbuf_handle.borrow_mut() = Some(create_vert_buff_init(
+                    &st.surface_context,
+                    &verts,
+                ));
+
+                v_count = verts.len();
+            }
 
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("polyline pass"),
@@ -288,9 +301,14 @@ pub(crate) fn make_strip_rpass(
             });
 
             rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
-            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..));
+
+            let binding = vbuf_handle.borrow();
+            let vbuf = binding.as_ref().unwrap();
+
+            rp.set_vertex_buffer(0, vbuf.slice(..));
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
-            rp.draw(0..verts.len() as u32, 0..1);
+
+            rp.draw(0..v_count as u32, 0..1);
         },
     ));
 
