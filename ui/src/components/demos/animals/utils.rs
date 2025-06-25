@@ -117,9 +117,12 @@ pub(crate) fn make_spine_rpass(
     let vs_handle = vs_src.clone();
     let fs_handle = fs_src.clone();
 
+    let vbuf_handle: Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
+    let ibuf_handle: Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
+    let inst_handle: Rc<RefCell<Option<InstanceCtx>>> = Rc::new(RefCell::new(None));
+
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
-            // 1) lazy-init pipeline
             if pipe_handle.borrow().is_none() {
                 *pipe_handle.borrow_mut() = Some(make_joint_pipe(
                     st,
@@ -128,32 +131,39 @@ pub(crate) fn make_spine_rpass(
                 ));
             }
 
-            // -- make sure the vertex buffer really is a quad --------------
-            if st.num_indices != 0
-                || st.vertex_buffer.size()
-                    != (QUAD_VERTS.len() * std::mem::size_of::<Vertex>()) as u64
-            {
-                st.vertex_buffer = create_vert_buff_init(&st.surface_context, QUAD_VERTS);
-                st.num_indices = 0; // non-indexed draw
+            if vbuf_handle.borrow().is_none() {
+                *vbuf_handle.borrow_mut() = Some(create_vert_buff_init(
+                    &st.surface_context,
+                    QUAD_VERTS,
+                ));
+                *ibuf_handle.borrow_mut() = Some(create_idx_buff_init(
+                    &st.surface_context,
+                    QUAD_INDICES,
+                ));
             }
 
-            st.index_buffer = create_idx_buff_init(&st.surface_context, QUAD_INDICES);
-            st.num_indices = QUAD_INDICES.len() as u32;
+            if inst_handle.borrow().is_none() {
+                let instances = build_instance_mats(&pts_handle.borrow(), 0.05);
+                let needed = instances.len() as u32;
+                let count = instances.len() as u32;
+                let buff = create_instance_buff(&st.surface_context, 256);
 
-            let circle_pipe = pipe_handle.borrow();
-            let pipe_ref = circle_pipe.as_ref().unwrap();
+                *inst_handle.borrow_mut() = Some(InstanceCtx {
+                    instances,
+                    needed,
+                    count,
+                    buff
+                });
+            }
 
-            // 2) produce fresh instance data
-            let inst = build_instance_mats(&pts_handle.borrow(), 0.05);
-            let needed = inst.len() as u32;
+            let binding = inst_handle.borrow();
+            let inst = binding.as_ref().unwrap();
 
-            ensure_instance_capacity(st, needed);
-            st.instance_count = needed;
-
+            ensure_instance_capacity(st, inst_handle.borrow().as_ref().unwrap().needed);
             st.surface_context.queue.write_buffer(
-                &st.instance_buffer,
+                &inst.buff,
                 0,
-                bytemuck::cast_slice(&inst),
+                bytemuck::cast_slice(&inst.instances),
             );
 
             // 3) bind + draw
@@ -171,12 +181,25 @@ pub(crate) fn make_spine_rpass(
                 ..Default::default()
             });
 
-            rp.set_pipeline(pipe_ref);
-            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..)); // quad verts
-            rp.set_vertex_buffer(1, st.instance_buffer.slice(..)); // per-instance
-            rp.set_index_buffer(st.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
+
+            let binding = vbuf_handle.borrow();
+            let vbuf = binding.as_ref().unwrap();
+            rp.set_vertex_buffer(0, vbuf.slice(..));
+
+            let binding = inst_handle.borrow();
+            let inst = binding.as_ref().unwrap();
+            rp.set_vertex_buffer(1, inst.buff.slice(..));
+
+            let binding = ibuf_handle.borrow();
+            let ibuf = binding.as_ref().unwrap();
+            rp.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint16);
+
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
-            rp.draw_indexed(0..st.num_indices, 0, 0..st.instance_count);
+
+            let idx_count = QUAD_INDICES.len() as u32;
+            let inst_count = inst_handle.borrow().as_ref().unwrap().count;
+            rp.draw_indexed(0..idx_count, 0, 0..inst_count);
         },
     ));
 

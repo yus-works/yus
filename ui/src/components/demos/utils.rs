@@ -242,6 +242,12 @@ fn add_input_handlers(
 }
 
 pub type RenderPass = Rc<RefCell<dyn FnMut(&mut GpuState, &CameraInput, &mut FrameCtx)>>;
+pub struct InstanceCtx {
+    pub instances: Vec<InstanceRaw>,
+    pub needed: u32,
+    pub count: u32,
+    pub buff: wgpu::Buffer,
+}
 
 fn start_render_loop(
     state_rc: Rc<RefCell<Option<GpuState>>>,
