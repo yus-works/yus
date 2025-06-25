@@ -412,6 +412,22 @@ fn make_debug_pipe(st: &GpuState) -> wgpu::RenderPipeline {
         })
 }
 
+fn map_quads_to_points(r: f32, pts_handle: &Rc<RefCell<Vec<Vec2>>>) -> Vec<InstanceRaw> {
+    pts_handle
+        .borrow()
+        .iter()
+        .enumerate()
+        .map(|(_, p)| {
+            let model = Mat4::from_scale_rotation_translation(
+                Vec3::new(r, r, 1.0),
+                glam::Quat::IDENTITY,
+                Vec3::new(p.x, p.y, 0.),
+            );
+            InstanceRaw::from_mat4(model)
+        })
+        .collect()
+}
+
 pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
     let pipeline = Rc::new(RefCell::new(None));
 
@@ -440,22 +456,7 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
             }
 
             if inst_handle.borrow().is_none() {
-                let instances: Vec<_> = {
-                    pts_handle
-                        .borrow()
-                        .iter()
-                        .enumerate()
-                        .map(|(_, p)| {
-                            let r = 0.02;
-                            let model = Mat4::from_scale_rotation_translation(
-                                Vec3::new(r, r, 1.0),
-                                glam::Quat::IDENTITY,
-                                Vec3::new(p.x, p.y, 0.),
-                            );
-                            InstanceRaw::from_mat4(model)
-                        })
-                        .collect()
-                };
+                let instances: Vec<_> = map_quads_to_points(0.02, &pts_handle);
 
                 let needed = instances.len() as u32;
                 let count = instances.len() as u32;
@@ -472,11 +473,14 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
             let binding = inst_handle.borrow();
             let inst = binding.as_ref().unwrap();
 
+            // NOTE: rebuild instances every frame so the dots update based on current points
+            let instances: Vec<_> = map_quads_to_points(0.02, &pts_handle);
+
             ensure_instance_capacity(st, inst_handle.borrow().as_ref().unwrap().needed);
             st.surface_context.queue.write_buffer(
                 &inst.buff,
                 0,
-                bytemuck::cast_slice(&inst.instances),
+                bytemuck::cast_slice(&instances),
             );
 
             // 3) bind + draw
