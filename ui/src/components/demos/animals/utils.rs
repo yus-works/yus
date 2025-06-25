@@ -22,7 +22,6 @@ use crate::{
             },
         },
         instance::InstanceRaw,
-        mesh,
         vertex::Vertex,
     },
 };
@@ -138,7 +137,7 @@ pub(crate) fn make_spine_rpass(
                 st.num_indices = 0; // non-indexed draw
             }
 
-            st.index_buffer = create_idx_buff(&st.surface_context, QUAD_INDICES);
+            st.index_buffer = create_idx_buff_init(&st.surface_context, QUAD_INDICES);
             st.num_indices = QUAD_INDICES.len() as u32;
 
             let circle_pipe = pipe_handle.borrow();
@@ -257,11 +256,7 @@ pub(crate) fn make_strip_rpass(
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
-            st.populate_common_buffers(
-                &Projection::FlatQuad,
-                cam,
-                &mesh::CpuMesh::new(vec![], vec![]),
-            );
+            st.populate_common_buffers(&Projection::FlatQuad, cam);
 
             let vs = vs_handle.get_untracked();
             let fs = fs_handle.get_untracked();

@@ -6,7 +6,7 @@ use glam::Vec2;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    components::demos::utils::start_rendering,
+    components::demos::utils::{make_points_rpass, start_rendering},
     meshes,
     render::renderer::{camera_input::CameraInput, gpu::GpuState},
 };
@@ -52,10 +52,11 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         camera_rc,
         show_hint,
         gpu_support,
-        pending,
         CANVAS_ID,
-        vec![strip_pass, spine_pass],
-        vec![strip_pipe, spine_pipe],
+        vec![
+            strip_pass, spine_pass,
+            make_points_rpass(points_rc.clone())
+        ],
         drag_head_to_cursor(points_rc.clone()),
         solve_chain(points_rc.clone(), 0.15, 9),
     );
