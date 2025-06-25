@@ -42,7 +42,7 @@ pub struct GpuState {
     pub depth_view: wgpu::TextureView,
 }
 
-pub fn create_vert_buff(sc: &SurfaceContext, vertices: &[Vertex]) -> wgpu::Buffer {
+pub fn create_vert_buff_init(sc: &SurfaceContext, vertices: &[Vertex]) -> wgpu::Buffer {
     sc.device
         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -51,7 +51,7 @@ pub fn create_vert_buff(sc: &SurfaceContext, vertices: &[Vertex]) -> wgpu::Buffe
         })
 }
 
-pub fn create_idx_buff(sc: &SurfaceContext, indices: &[u16]) -> wgpu::Buffer {
+pub fn create_idx_buff_init(sc: &SurfaceContext, indices: &[u16]) -> wgpu::Buffer {
     sc.device
         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
@@ -146,11 +146,11 @@ impl FrameCtx {
 
 impl GpuState {
     pub fn set_vertices(&mut self, vertices: &[Vertex]) {
-        self.vertex_buffer = create_vert_buff(&self.surface_context, vertices);
+        self.vertex_buffer = create_vert_buff_init(&self.surface_context, vertices);
     }
 
     pub fn set_indicies(&mut self, indices: &[u16]) {
-        self.index_buffer = create_idx_buff(&self.surface_context, indices)
+        self.index_buffer = create_idx_buff_init(&self.surface_context, indices)
     }
 
     pub fn resolution(&self) -> (f32, f32) {

@@ -18,7 +18,7 @@ use crate::{
         gpu::{
             GpuState,
             gpu_state::{
-                FrameCtx, Projection, create_idx_buff, create_vert_buff, ensure_instance_capacity,
+                FrameCtx, Projection, create_idx_buff_init, create_vert_buff_init, ensure_instance_capacity,
             },
         },
         instance::InstanceRaw,
@@ -134,7 +134,7 @@ pub(crate) fn make_spine_rpass(
                 || st.vertex_buffer.size()
                     != (QUAD_VERTS.len() * std::mem::size_of::<Vertex>()) as u64
             {
-                st.vertex_buffer = create_vert_buff(&st.surface_context, QUAD_VERTS);
+                st.vertex_buffer = create_vert_buff_init(&st.surface_context, QUAD_VERTS);
                 st.num_indices = 0; // non-indexed draw
             }
 
@@ -275,7 +275,7 @@ pub(crate) fn make_strip_rpass(
                 let pts = pts_handle.borrow();
                 stroke_polyline(&pts, 0.15)
             };
-            st.vertex_buffer = create_vert_buff(&st.surface_context, &verts);
+            st.vertex_buffer = create_vert_buff_init(&st.surface_context, &verts);
             st.num_indices = 0;
 
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

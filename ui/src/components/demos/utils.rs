@@ -24,6 +24,8 @@ use wgpu::MaintainBase;
 use crate::meshes::quad::QUAD_INDICES;
 use crate::meshes::quad::QUAD_VERTS;
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::gpu_state::create_idx_buff_init;
+use crate::render::renderer::gpu::gpu_state::create_vert_buff_init;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::FrameCtx;
 use crate::render::renderer::gpu::gpu_state::create_idx_buff;
@@ -451,7 +453,7 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
                 || st.vertex_buffer.size()
                     != (QUAD_VERTS.len() * std::mem::size_of::<Vertex>()) as u64
             {
-                st.vertex_buffer = create_vert_buff(&st.surface_context, QUAD_VERTS);
+                st.vertex_buffer = create_vert_buff_init(&st.surface_context, QUAD_VERTS);
                 st.num_indices = 0; // non-indexed draw
             }
 

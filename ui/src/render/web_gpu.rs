@@ -18,7 +18,7 @@ use web_sys;
 
 use super::renderer::gpu::gpu_state::create_idx_buff;
 use super::renderer::gpu::gpu_state::create_instance_buff;
-use super::renderer::gpu::gpu_state::create_vert_buff;
+use super::renderer::gpu::gpu_state::create_vert_buff_init;
 use super::renderer::gpu::gpu_state::GpuState;
 use super::renderer::gpu::resource_context::ResourceContext;
 use super::renderer::gpu::surface_context::SurfaceContext;
@@ -188,8 +188,8 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
     let t0 = web_sys::window().unwrap().performance().unwrap().now();
 
     // render quad by default
-    let vertex_buffer = create_vert_buff(&sc, meshes::quad::QUAD_VERTS);
-    let index_buffer = create_idx_buff(&sc, meshes::quad::QUAD_INDICES);
+    let vertex_buffer = create_vert_buff_init(&sc, meshes::quad::QUAD_VERTS);
+    let index_buffer = create_idx_buff_init(&sc, meshes::quad::QUAD_INDICES);
     let num_indices = meshes::quad::QUAD_INDICES.len() as u32;
 
     Ok(GpuState {
