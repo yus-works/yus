@@ -3,8 +3,10 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use anyhow::anyhow;
+use glam::Mat4;
+use glam::Vec2;
+use glam::Vec3;
 use gloo_timers::future::TimeoutFuture;
-use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::Effect;
 use leptos::prelude::ElementChild;
@@ -13,15 +15,23 @@ use leptos::prelude::RwSignal;
 use leptos::prelude::Set;
 use leptos::reactive::spawn_local;
 use leptos::{IntoView, component, view};
+use wasm_bindgen::JsValue;
 use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
-use wgpu::RenderPipeline;
+use wgpu::ErrorFilter;
+use wgpu::MaintainBase;
 
+use crate::meshes::quad::QUAD_INDICES;
+use crate::meshes::quad::QUAD_VERTS;
 use crate::render::renderer::camera_input::CameraInput;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::FrameCtx;
+use crate::render::renderer::gpu::gpu_state::create_idx_buff;
+use crate::render::renderer::gpu::gpu_state::create_vert_buff;
+use crate::render::renderer::gpu::gpu_state::ensure_instance_capacity;
+use crate::render::renderer::instance::InstanceRaw;
+use crate::render::renderer::vertex::Vertex;
 use crate::render::web_gpu::init_wgpu;
-use crate::render::web_gpu::reload_pipeline;
 
 /// true on PCs with a mouse/track-pad, false on touch devices
 pub fn is_desktop() -> bool {
@@ -346,12 +356,159 @@ pub fn start_rendering<F, G>(
 
             add_input_handlers(&camera_rc_init, &canvas, show_hint);
 
-            start_render_loop(
-                state_rc_init,
-                camera_rc_init,
-                rpasses_init,
-                on_frame,
-            );
+            start_render_loop(state_rc_init, camera_rc_init, rpasses_init, on_frame);
         });
     });
+}
+
+pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
+    let pipeline = Rc::new(RefCell::new(None));
+
+    // clone handles that must live inside the closure
+    let pipe_handle = pipeline.clone();
+    let pts_handle = points.clone();
+
+    Rc::new(RefCell::new(
+        move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
+            // 1) lazy-init pipeline
+            if pipe_handle.borrow().is_none() {
+                // push a validation scope
+                st.surface_context
+                    .device
+                    .push_error_scope(ErrorFilter::Validation);
+
+                *pipe_handle.borrow_mut() = Some(
+                    st.surface_context.device.create_render_pipeline(
+                        &wgpu::RenderPipelineDescriptor {
+                            label: Some("draw in points for debugging"),
+                            layout: None,
+                            cache: None,
+                            vertex: wgpu::VertexState {
+                                module: &st
+                                    .surface_context
+                                    .device
+                                    .create_shader_module(wgpu::ShaderModuleDescriptor {
+                                    label: Some("debug fs shader that just draws in points"),
+                                    source: wgpu::ShaderSource::Wgsl(
+                                        include_str!(
+                                            "../../render/renderer/shaders/debug_points.vert.wgsl"
+                                        )
+                                        .into(),
+                                    ),
+                                }),
+                                entry_point: Some("vs_main"),
+                                buffers: &[Vertex::desc(), InstanceRaw::desc()],
+                                compilation_options: Default::default(),
+                            },
+                            fragment: Some(wgpu::FragmentState {
+                                module: &st
+                                    .surface_context
+                                    .device
+                                    .create_shader_module(wgpu::ShaderModuleDescriptor {
+                                    label: Some("debug fs shader that just draws in points"),
+                                    source: wgpu::ShaderSource::Wgsl(
+                                        include_str!(
+                                            "../../render/renderer/shaders/debug_points.frag.wgsl"
+                                        )
+                                        .into(),
+                                    ),
+                                }),
+                                entry_point: Some("fs_main"),
+                                targets: &[Some(wgpu::ColorTargetState {
+                                    format: st.surface_context.config.format,
+                                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                                    write_mask: wgpu::ColorWrites::ALL,
+                                })],
+                                compilation_options: Default::default(),
+                            }),
+                            primitive: wgpu::PrimitiveState {
+                                topology: wgpu::PrimitiveTopology::TriangleList,
+                                strip_index_format: None,
+                                ..Default::default()
+                            },
+                            depth_stencil: None,
+                            multisample: Default::default(),
+                            multiview: None,
+                        },
+                    ),
+                );
+
+                // force validation to run immediately
+                st.surface_context.device.poll(MaintainBase::Wait);
+
+                // spawn a one-off async task that awaits the error
+                let dev_clone = st.surface_context.device.clone();
+                spawn_local(async move {
+                    if let Some(err) = dev_clone.pop_error_scope().await {
+                        web_sys::console::error_1(&JsValue::from_str(&format!(
+                            "[WebGPU] pipeline validation failed:\n{err}"
+                        )));
+                    }
+                });
+            }
+
+            if st.num_indices != 0
+                || st.vertex_buffer.size()
+                    != (QUAD_VERTS.len() * std::mem::size_of::<Vertex>()) as u64
+            {
+                st.vertex_buffer = create_vert_buff(&st.surface_context, QUAD_VERTS);
+                st.num_indices = 0; // non-indexed draw
+            }
+
+            st.index_buffer = create_idx_buff(&st.surface_context, QUAD_INDICES);
+            st.num_indices = QUAD_INDICES.len() as u32;
+
+            let circle_pipe = pipe_handle.borrow();
+            let pipe_ref = circle_pipe.as_ref().unwrap();
+
+            let instance_models: Vec<_> = {
+                pts_handle
+                    .borrow()
+                    .iter()
+                    .enumerate()
+                    .map(|(_, p)| {
+                        let r = 0.02;
+                        let model = Mat4::from_scale_rotation_translation(
+                            Vec3::new(r, r, 1.0),    // xy-scale, no z-thickness
+                            glam::Quat::IDENTITY,    // no rotation
+                            Vec3::new(p.x, p.y, 0.), // clip-space translation
+                        );
+                        InstanceRaw::from_mat4(model)
+                    })
+                    .collect()
+            };
+
+            let needed = instance_models.len() as u32;
+
+            ensure_instance_capacity(st, needed);
+            st.instance_count = needed;
+
+            st.surface_context.queue.write_buffer(
+                &st.instance_buffer,
+                0,
+                bytemuck::cast_slice(&instance_models),
+            );
+
+            // 3) bind + draw
+            let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("circle pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &ctx.color_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                ..Default::default()
+            });
+
+            rp.set_pipeline(pipe_ref);
+            rp.set_vertex_buffer(0, st.vertex_buffer.slice(..)); // quad verts
+            rp.set_vertex_buffer(1, st.instance_buffer.slice(..)); // per-instance
+            rp.set_index_buffer(st.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            rp.draw_indexed(0..st.num_indices, 0, 0..st.instance_count);
+        },
+    ))
 }
