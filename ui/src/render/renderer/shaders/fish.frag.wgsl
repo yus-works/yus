@@ -25,12 +25,11 @@ fn triangle_wave(x: f32) -> f32 {
 @fragment
 fn joints_fs(i: VSOut) -> @location(0) vec4<f32> {
     let p = i.uv * 2.0 - 1.0;
-    let d = abs(length(p));
+    let d = length(p);
 
-    let edge = 0.015;
-    let alpha = smoothstep(1.0, 1.0 - edge, d);
+    let alpha = smoothstep(0, 0.01, 1 - d) - smoothstep(0.15, 0.2, 1 - d);
 
-    let colour = vec3<f32>(1.0, 1.0, 0.0);
+    let colour = vec3<f32>(1.0, 1.0, 1.0);
     return vec4(colour * alpha, alpha);
 }
 
