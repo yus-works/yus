@@ -432,7 +432,8 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
                 );
 
                 // force validation to run immediately
-                st.surface_context.device.poll(MaintainBase::Wait);
+                // TODO: do something with this I guess
+                let _ = st.surface_context.device.poll(MaintainBase::Wait);
 
                 // spawn a one-off async task that awaits the error
                 let dev_clone = st.surface_context.device.clone();
