@@ -7,7 +7,7 @@ use web_sys::{HtmlCanvasElement, PointerEvent};
 use crate::{
     components::{
         demo::to_clip_space,
-        demos::utils::{RenderPass, add_listener},
+        demos::utils::{add_listener, InstanceCtx, RenderPass},
     },
     meshes::{
         quad::{QUAD_INDICES, QUAD_VERTS},
@@ -16,10 +16,9 @@ use crate::{
     render::renderer::{
         camera_input::CameraInput,
         gpu::{
-            GpuState,
             gpu_state::{
-                FrameCtx, Projection, create_idx_buff_init, create_vert_buff_init, ensure_instance_capacity,
-            },
+                create_idx_buff_init, create_instance_buff, create_vert_buff_init, ensure_instance_capacity, FrameCtx, Projection
+            }, GpuState
         },
         instance::InstanceRaw,
         vertex::Vertex,
