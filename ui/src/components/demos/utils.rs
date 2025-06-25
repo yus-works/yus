@@ -28,8 +28,6 @@ use crate::render::renderer::gpu::gpu_state::create_idx_buff_init;
 use crate::render::renderer::gpu::gpu_state::create_vert_buff_init;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::FrameCtx;
-use crate::render::renderer::gpu::gpu_state::create_idx_buff;
-use crate::render::renderer::gpu::gpu_state::create_vert_buff;
 use crate::render::renderer::gpu::gpu_state::ensure_instance_capacity;
 use crate::render::renderer::instance::InstanceRaw;
 use crate::render::renderer::vertex::Vertex;
@@ -299,12 +297,10 @@ pub fn start_rendering<F, G>(
 
     show_hint: RwSignal<bool>,
     gpu_support: RwSignal<bool>,
-    pending: RwSignal<Option<(String, String)>>,
 
     canvas_id: &str,
 
     rpasses: Vec<RenderPass>,
-    pipes: Vec<Rc<RefCell<Option<wgpu::RenderPipeline>>>>,
 
     on_canvas_ready: F, // extra closure after canvas is ready hook
     on_frame: G,        // extra closure to run every frame
@@ -457,7 +453,7 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
                 st.num_indices = 0; // non-indexed draw
             }
 
-            st.index_buffer = create_idx_buff(&st.surface_context, QUAD_INDICES);
+            st.index_buffer = create_idx_buff_init(&st.surface_context, QUAD_INDICES);
             st.num_indices = QUAD_INDICES.len() as u32;
 
             let circle_pipe = pipe_handle.borrow();

@@ -4,8 +4,6 @@ use std::rc::Rc;
 use anyhow::anyhow;
 use anyhow::Result;
 
-use wgpu::util::DeviceExt;
-
 use web_sys::HtmlCanvasElement;
 use crate::meshes;
 use crate::render::renderer::gpu::utils::*;
@@ -16,7 +14,7 @@ use glam::Vec3;
 use crate::render::renderer::vertex;
 use web_sys;
 
-use super::renderer::gpu::gpu_state::create_idx_buff;
+use super::renderer::gpu::gpu_state::create_idx_buff_init;
 use super::renderer::gpu::gpu_state::create_instance_buff;
 use super::renderer::gpu::gpu_state::create_vert_buff_init;
 use super::renderer::gpu::gpu_state::GpuState;
@@ -92,7 +90,7 @@ pub async fn reload_pipeline(
     }
 }
 
-pub fn create_pipeline(
+pub fn default_pipeline(
     device: &wgpu::Device,
     config: &wgpu::SurfaceConfiguration,
     pipeline_layout: &wgpu::PipelineLayout,
@@ -101,7 +99,7 @@ pub fn create_pipeline(
 ) -> wgpu::RenderPipeline {
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         cache: None,
-        label: Some("Render Pipeline"),
+        label: Some("Default Render Pipeline"),
         layout: Some(pipeline_layout),
         vertex: wgpu::VertexState {
             compilation_options: Default::default(),
@@ -157,7 +155,7 @@ pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
         })
     );
 
-    let pipeline = create_pipeline(&sc.device, &sc.config, &rc.pipeline_layout(&sc.device), &vs_module, &fs_module);
+    let pipeline = default_pipeline(&sc.device, &sc.config, &rc.pipeline_layout(&sc.device), &vs_module, &fs_module);
     let depth_view = create_depth_view(&sc.device, &sc.config);
 
     let translations = [

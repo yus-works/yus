@@ -1,7 +1,7 @@
 use crate::components::demos::utils::is_desktop;
 use leptos::{
     control_flow::Show,
-    component, html::Textarea, leptos_dom::logging::console_log, prelude::{
+    component, html::Textarea, prelude::{
         event_target_value, signal, ClassAttribute, ElementChild, Get, NodeRef, NodeRefAttribute, OnAttribute, PropAttribute, RwSignal, Set
     }, view, IntoView
 };

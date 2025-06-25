@@ -1,10 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
 use bytemuck::{Pod, Zeroable};
-use glam::Mat4;
+use glam::{Mat4, Vec3};
+use leptos::prelude::{GetUntracked, RwSignal};
 use wgpu::util::DeviceExt;
-use wgpu::{CommandEncoder, StoreOp, TextureView};
+use wgpu::StoreOp;
 
+use crate::render::web_gpu::default_pipeline;
 use crate::{
     components::demos::utils::RenderPass,
     render::renderer::{
@@ -12,6 +14,7 @@ use crate::{
     },
 };
 
+use super::utils::{FragmentShader, VertexShader, create_shader_module};
 use super::{resource_context::ResourceContext, surface_context::SurfaceContext};
 
 #[repr(C)]
@@ -184,12 +187,7 @@ impl GpuState {
         }
     }
 
-    pub fn populate_common_buffers(&mut self, proj: &Projection, ci: &CameraInput, mesh: &CpuMesh) {
-        let sc = &self.surface_context;
-        self.vertex_buffer = create_vert_buff(sc, mesh.vertices.as_slice());
-        self.index_buffer = create_idx_buff(sc, mesh.indices.as_slice());
-        self.num_indices = mesh.index_count;
-
+    pub fn populate_common_buffers(&mut self, proj: &Projection, ci: &CameraInput) {
         let view_proj = match proj {
             &Projection::FlatQuad => Mat4::IDENTITY,
             &Projection::Custom(m) => m,
@@ -254,48 +252,126 @@ impl GpuState {
         // 4) submit + present
         frame_ctx.frame.present();
     }
-
-    fn default_rpass(&self, encoder: &mut CommandEncoder, view: &TextureView) {
-        let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::RED),
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: &self.depth_view,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
-                    store: StoreOp::Store,
-                }),
-                stencil_ops: None,
-            }),
-
-            occlusion_query_set: None,
-            timestamp_writes: None,
-        });
-        rpass.set_pipeline(&self.pipeline);
-        rpass.set_vertex_buffer(0, self.vertex_buffer.slice(..)); // mesh verts
-        rpass.set_vertex_buffer(1, self.instance_buffer.slice(..)); // per-instance models
-        rpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-        rpass.set_bind_group(0, &self.resource_context.common_bind_group.group, &[]);
-        rpass.set_bind_group(1, &self.resource_context.spatial_bind_group.group, &[]);
-        rpass.set_bind_group(2, &self.resource_context.texturing_bind_group.group, &[]);
-
-        rpass.draw_indexed(0..self.num_indices, 0, 0..self.instance_count);
-    }
 }
 
-pub fn make_default_rpass(mesh: Rc<RefCell<CpuMesh>>, proj: Rc<RefCell<Projection>>) -> RenderPass {
-    Rc::new(RefCell::new(
+pub fn make_default_rpass(
+    mesh: Rc<RefCell<CpuMesh>>,
+    proj: Rc<RefCell<Projection>>,
+
+    vs_src: RwSignal<String>,
+    fs_src: RwSignal<String>,
+) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
+    let pipeline = Rc::new(RefCell::new(None));
+
+    let pipe_handle = pipeline.clone();
+    let mesh_handle = mesh.clone();
+
+    let vbuf_handle:  Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
+    let ibuf_handle:  Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
+    let inst_handle: Rc<RefCell<Option<(wgpu::Buffer, Vec<InstanceRaw>, u32)>>> = Rc::new(RefCell::new(None));
+
+    let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
-            st.populate_common_buffers(&proj.borrow(), cam, &mesh.borrow());
-            st.default_rpass(&mut ctx.encoder, &ctx.color_view);
+            if pipe_handle.borrow().is_none() {
+                let pipe = default_pipeline(
+                    &st.surface_context.device,
+                    &st.surface_context.config,
+                    &st.resource_context
+                        .pipeline_layout(&st.surface_context.device),
+                    &VertexShader(create_shader_module(
+                        "default live vs",
+                        &vs_src.get_untracked(),
+                        &st.surface_context.device,
+                    )),
+                    &FragmentShader(create_shader_module(
+                        "default live fs",
+                        &fs_src.get_untracked(),
+                        &st.surface_context.device,
+                    )),
+                );
+
+                *pipe_handle.borrow_mut() = Some(pipe);
+            }
+
+            if vbuf_handle.borrow().is_none() {
+                *vbuf_handle.borrow_mut() = Some(create_vert_buff_init(
+                    &st.surface_context,
+                    mesh_handle.borrow().vertices.as_slice(),
+                ));
+                *ibuf_handle.borrow_mut() = Some(create_idx_buff_init(
+                    &st.surface_context,
+                    mesh_handle.borrow().indices.as_slice(),
+                ));
+            }
+
+            if inst_handle.borrow().is_none() {
+                let translations = [Vec3::ZERO];
+                let instances: Vec<_> = translations
+                    .iter()
+                    .map(|p| Mat4::from_translation(*p))
+                    .map(InstanceRaw::from_mat4)
+                    .collect();
+
+                let inst_buf = create_instance_buff(&st.surface_context, 256);
+
+                let inst_count = instances.len() as u32;
+
+                *inst_handle.borrow_mut() = Some((inst_buf, instances, inst_count));
+            }
+
+            let binding = inst_handle.borrow();
+            let (inst_buf, instances, inst_count) = binding.as_ref().unwrap();
+
+            st.populate_common_buffers(&proj.borrow(), cam);
+
+            let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &ctx.color_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::RED),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &ctx.depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
+
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            });
+
+            ensure_instance_capacity(st, 256);
+            st.surface_context.queue.write_buffer(
+                &inst_buf,
+                0,
+                bytemuck::cast_slice(&instances),
+            );
+
+            rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
+
+            let binding = vbuf_handle.borrow();
+            let vbuf = binding.as_ref().unwrap();
+            rp.set_vertex_buffer(0, vbuf.slice(..));
+
+            rp.set_vertex_buffer(1, inst_buf.slice(..));
+
+            let binding = ibuf_handle.borrow();
+            let ibuf = binding.as_ref().unwrap();
+            rp.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint16);
+
+            rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
+            rp.set_bind_group(1, &st.resource_context.spatial_bind_group.group, &[]);
+            rp.set_bind_group(2, &st.resource_context.texturing_bind_group.group, &[]);
+            rp.draw_indexed(0..mesh_handle.borrow().index_count, 0, 0..*inst_count);
         },
-    ))
+    ));
+
+    (pass, pipeline)
 }

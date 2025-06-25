@@ -1,5 +1,5 @@
 use leptos::prelude::{
-    ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Set, Show,
+    ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Show,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -22,19 +22,10 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
     let canvas_id = "animals-demo-canvas";
 
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
-    let pending = RwSignal::new(None::<(String, String)>);
-
     let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
 
     let gpu_support = RwSignal::new(true);
     let show_hint = RwSignal::new(true);
-
-    {
-        let pending = pending.clone();
-        Effect::new(move |_| {
-            pending.set(Some((vs_src.get(), fs_src.get())));
-        });
-    }
 
     let mesh = CpuMesh::new(
         meshes::quad::QUAD_VERTS.to_vec(),
@@ -42,18 +33,32 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
     );
 
     let mesh = Rc::new(RefCell::new(mesh));
-
     let proj = Rc::new(RefCell::new(Projection::FlatQuad));
+
+    let (default_rpass, default_pipe) = make_default_rpass(mesh, proj, vs_src, fs_src);
+    {
+        let vs_src = vs_src.clone();
+        let fs_src = fs_src.clone();
+        let pipes = [
+            default_pipe.clone(),
+        ];
+
+        Effect::new(move |_| {
+            vs_src.get();
+            fs_src.get();
+            for p in &pipes {
+                *p.borrow_mut() = None;
+            }
+        });
+    }
 
     start_rendering(
         state_rc,
         camera_rc,
         show_hint,
         gpu_support,
-        pending,
         canvas_id,
-        vec![make_default_rpass(mesh, proj)],
-        vec![],
+        vec![default_rpass],
         |_| {},
         || {},
     );
