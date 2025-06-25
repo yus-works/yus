@@ -89,7 +89,6 @@ fn make_joint_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
 }
 
 /// Build one model matrix per joint.
-/// `big` is the diameter of the vertebra, `small` the joint size.
 fn build_instance_mats(points: &[Vec2], big: f32) -> Vec<InstanceRaw> {
     points
         .iter()
