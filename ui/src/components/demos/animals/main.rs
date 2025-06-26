@@ -147,9 +147,9 @@ impl Joint {
     }
 }
 
-struct Animal {
-    spine: Vec<Joint>,
-    skin: Vec<Vec2>,
+pub struct Animal {
+    pub spine: Vec<Joint>,
+    pub skin: Vec<Vec2>,
 }
 
 impl Animal {
