@@ -1,6 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::meshes::quad::QUAD_INDICES;
+use crate::meshes::quad::QUAD_VERTS;
+use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::GpuState;
+use crate::render::renderer::gpu::gpu_state::FrameCtx;
+use crate::render::renderer::gpu::gpu_state::create_idx_buff_init;
+use crate::render::renderer::gpu::gpu_state::create_instance_buff;
+use crate::render::renderer::gpu::gpu_state::create_vert_buff_init;
+use crate::render::renderer::gpu::surface_context::SurfaceContext;
+use crate::render::renderer::instance::InstanceRaw;
+use crate::render::renderer::vertex::Vertex;
+use crate::render::web_gpu::init_wgpu;
 use anyhow::Result;
 use anyhow::anyhow;
 use glam::Mat4;
@@ -17,18 +29,6 @@ use leptos::reactive::spawn_local;
 use leptos::{IntoView, component, view};
 use wasm_bindgen::{JsCast, convert::FromWasmAbi, prelude::Closure};
 use web_sys::HtmlCanvasElement;
-use crate::meshes::quad::QUAD_INDICES;
-use crate::meshes::quad::QUAD_VERTS;
-use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::gpu_state::create_instance_buff;
-use crate::render::renderer::gpu::GpuState;
-use crate::render::renderer::gpu::gpu_state::FrameCtx;
-use crate::render::renderer::gpu::gpu_state::create_idx_buff_init;
-use crate::render::renderer::gpu::gpu_state::create_vert_buff_init;
-use crate::render::renderer::gpu::gpu_state::ensure_instance_capacity;
-use crate::render::renderer::instance::InstanceRaw;
-use crate::render::renderer::vertex::Vertex;
-use crate::render::web_gpu::init_wgpu;
 
 /// true on PCs with a mouse/track-pad, false on touch devices
 pub fn is_desktop() -> bool {
@@ -241,9 +241,50 @@ fn add_input_handlers(
 pub type RenderPass = Rc<RefCell<dyn FnMut(&mut GpuState, &CameraInput, &mut FrameCtx)>>;
 pub struct InstanceCtx {
     pub instances: Vec<InstanceRaw>,
-    pub needed: u32,
+    pub capacity: u32,
     pub count: u32,
     pub buff: wgpu::Buffer,
+}
+
+impl InstanceCtx {
+    pub fn new(sc: &SurfaceContext, initial_cap: u32) -> Self {
+        let buff = create_instance_buff(sc, initial_cap);
+        Self {
+            instances: Vec::with_capacity(initial_cap as usize),
+            capacity: initial_cap,
+            count: 0,
+            buff,
+        }
+    }
+
+    /// grow `inst.buff` (gpu buffer) if `inst.instances.len()` (cpu vec) no longer fits.
+    pub fn ensure_capacity(&mut self, sc: &SurfaceContext) {
+        let needed = self.instances.len() as u32;
+        if needed <= self.capacity {
+            self.count = needed; // keep `count` in sync
+            return;
+        }
+
+        // allocate a bigger buffer (next power-of-two keeps reallocs rare)
+        self.capacity = needed.next_power_of_two();
+        self.buff = create_instance_buff(sc, self.capacity);
+        self.count = needed;
+    }
+
+    /// Rebuild instance data **and upload it**.
+    pub fn sync_instances<F>(&mut self, sc: &SurfaceContext, rebuild: F)
+    where
+        F: FnOnce() -> Vec<InstanceRaw>,
+    {
+        self.instances.clear(); // keep allocation
+        self.instances.extend(rebuild()); // fill with new data
+        self.count = self.instances.len() as u32;
+
+        self.ensure_capacity(sc);
+
+        sc.queue
+            .write_buffer(&self.buff, 0, bytemuck::cast_slice(&self.instances));
+    }
 }
 
 fn start_render_loop(
@@ -445,43 +486,24 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
             }
 
             if vbuf_handle.borrow().is_none() {
-                *vbuf_handle.borrow_mut() = Some(create_vert_buff_init(
-                    &st.surface_context,
-                    QUAD_VERTS,
-                ));
-                *ibuf_handle.borrow_mut() = Some(create_idx_buff_init(
-                    &st.surface_context,
-                    QUAD_INDICES,
-                ));
+                *vbuf_handle.borrow_mut() =
+                    Some(create_vert_buff_init(&st.surface_context, QUAD_VERTS));
+                *ibuf_handle.borrow_mut() =
+                    Some(create_idx_buff_init(&st.surface_context, QUAD_INDICES));
             }
 
             if inst_handle.borrow().is_none() {
-                let instances: Vec<_> = map_quads_to_points(0.02, &pts_handle);
-
-                let needed = instances.len() as u32;
-                let count = instances.len() as u32;
-                let buff = create_instance_buff(&st.surface_context, 256);
-
-                *inst_handle.borrow_mut() = Some(InstanceCtx {
-                    instances,
-                    needed,
-                    count,
-                    buff
-                });
+                *inst_handle.borrow_mut() = Some(InstanceCtx::new(&st.surface_context, 256));
             }
 
-            let binding = inst_handle.borrow();
-            let inst = binding.as_ref().unwrap();
+            {
+                let mut binding = inst_handle.borrow_mut();
+                let inst = binding.as_mut().unwrap();
 
-            // NOTE: rebuild instances every frame so the dots update based on current points
-            let instances: Vec<_> = map_quads_to_points(0.02, &pts_handle);
-
-            ensure_instance_capacity(st, inst_handle.borrow().as_ref().unwrap().needed);
-            st.surface_context.queue.write_buffer(
-                &inst.buff,
-                0,
-                bytemuck::cast_slice(&instances),
-            );
+                inst.sync_instances(&st.surface_context, || {
+                    map_quads_to_points(0.02, &pts_handle)
+                });
+            }
 
             // 3) bind + draw
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

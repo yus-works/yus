@@ -17,7 +17,7 @@ use crate::{
         camera_input::CameraInput,
         gpu::{
             gpu_state::{
-                create_idx_buff_init, create_instance_buff, create_vert_buff_init, ensure_instance_capacity, FrameCtx, Projection
+                create_idx_buff_init, create_vert_buff_init, FrameCtx, Projection
             }, GpuState
         },
         instance::InstanceRaw,
@@ -142,28 +142,17 @@ pub(crate) fn make_spine_rpass(
             }
 
             if inst_handle.borrow().is_none() {
-                let instances = build_instance_mats(&pts_handle.borrow(), 0.05);
-                let needed = instances.len() as u32;
-                let count = instances.len() as u32;
-                let buff = create_instance_buff(&st.surface_context, 256);
-
-                *inst_handle.borrow_mut() = Some(InstanceCtx {
-                    instances,
-                    needed,
-                    count,
-                    buff
-                });
+                *inst_handle.borrow_mut() = Some(InstanceCtx::new(&st.surface_context, 256));
             }
 
-            let binding = inst_handle.borrow();
-            let inst = binding.as_ref().unwrap();
+            {
+                let mut inst_ref = inst_handle.borrow_mut();
+                let inst = inst_ref.as_mut().unwrap();
 
-            ensure_instance_capacity(st, inst_handle.borrow().as_ref().unwrap().needed);
-            st.surface_context.queue.write_buffer(
-                &inst.buff,
-                0,
-                bytemuck::cast_slice(&inst.instances),
-            );
+                inst.sync_instances(&st.surface_context, || {
+                    build_instance_mats(&pts_handle.borrow(), 0.05)
+                });
+            }
 
             // 3) bind + draw
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

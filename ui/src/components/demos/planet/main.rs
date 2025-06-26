@@ -1,4 +1,3 @@
-use glam::Vec2;
 use leptos::prelude::{
     ClassAttribute, Effect, ElementChild, Get, GlobalAttributes, RwSignal, Show,
 };
@@ -7,7 +6,6 @@ use std::rc::Rc;
 
 use leptos::view;
 
-use crate::components::demos::utils::make_points_rpass;
 use crate::components::demos::utils::start_rendering;
 use crate::components::demos::utils::WebGPUNotSupportedMsg;
 use crate::meshes;

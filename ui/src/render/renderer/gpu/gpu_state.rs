@@ -6,6 +6,7 @@ use leptos::prelude::{GetUntracked, RwSignal};
 use wgpu::util::DeviceExt;
 use wgpu::StoreOp;
 
+use crate::components::demos::utils::InstanceCtx;
 use crate::render::web_gpu::default_pipeline;
 use crate::{
     components::demos::utils::RenderPass,
@@ -70,16 +71,6 @@ pub fn create_instance_buff(sc: &SurfaceContext, capacity: u32) -> wgpu::Buffer 
         usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     })
-}
-
-pub fn ensure_instance_capacity(st: &mut GpuState, needed: u32) {
-    if needed <= st.instance_capacity {
-        return;
-    }
-
-    let new_cap = needed.next_power_of_two();
-    st.instance_buffer = create_instance_buff(&st.surface_context, new_cap);
-    st.instance_capacity = new_cap;
 }
 
 pub enum Projection {
@@ -268,7 +259,7 @@ pub fn make_default_rpass(
 
     let vbuf_handle:  Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
     let ibuf_handle:  Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
-    let inst_handle: Rc<RefCell<Option<(wgpu::Buffer, Vec<InstanceRaw>, u32)>>> = Rc::new(RefCell::new(None));
+    let inst_handle: Rc<RefCell<Option<InstanceCtx>>> = Rc::new(RefCell::new(None));
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
@@ -305,22 +296,22 @@ pub fn make_default_rpass(
             }
 
             if inst_handle.borrow().is_none() {
-                let translations = [Vec3::ZERO];
-                let instances: Vec<_> = translations
-                    .iter()
-                    .map(|p| Mat4::from_translation(*p))
-                    .map(InstanceRaw::from_mat4)
-                    .collect();
-
-                let inst_buf = create_instance_buff(&st.surface_context, 256);
-
-                let inst_count = instances.len() as u32;
-
-                *inst_handle.borrow_mut() = Some((inst_buf, instances, inst_count));
+                *inst_handle.borrow_mut() = Some(InstanceCtx::new(&st.surface_context, 256));
             }
 
-            let binding = inst_handle.borrow();
-            let (inst_buf, instances, inst_count) = binding.as_ref().unwrap();
+            {
+                let mut binding = inst_handle.borrow_mut();
+                let inst = binding.as_mut().unwrap();
+
+                inst.sync_instances(&st.surface_context, || {
+                    let translations = [Vec3::ZERO];
+                    translations
+                        .iter()
+                        .map(|p| Mat4::from_translation(*p))
+                        .map(InstanceRaw::from_mat4)
+                        .collect()
+                });
+            }
 
             st.populate_common_buffers(&proj.borrow(), cam);
 
@@ -347,20 +338,15 @@ pub fn make_default_rpass(
                 timestamp_writes: None,
             });
 
-            ensure_instance_capacity(st, 256);
-            st.surface_context.queue.write_buffer(
-                &inst_buf,
-                0,
-                bytemuck::cast_slice(&instances),
-            );
-
             rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
 
             let binding = vbuf_handle.borrow();
             let vbuf = binding.as_ref().unwrap();
             rp.set_vertex_buffer(0, vbuf.slice(..));
 
-            rp.set_vertex_buffer(1, inst_buf.slice(..));
+            let binding = inst_handle.borrow();
+            let inst = binding.as_ref().unwrap();
+            rp.set_vertex_buffer(1, inst.buff.slice(..));
 
             let binding = ibuf_handle.borrow();
             let ibuf = binding.as_ref().unwrap();
@@ -369,7 +355,9 @@ pub fn make_default_rpass(
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
             rp.set_bind_group(1, &st.resource_context.spatial_bind_group.group, &[]);
             rp.set_bind_group(2, &st.resource_context.texturing_bind_group.group, &[]);
-            rp.draw_indexed(0..mesh_handle.borrow().index_count, 0, 0..*inst_count);
+
+            let inst_count = inst_handle.borrow().as_ref().unwrap().count;
+            rp.draw_indexed(0..mesh_handle.borrow().index_count, 0, 0..inst_count);
         },
     ));
 
