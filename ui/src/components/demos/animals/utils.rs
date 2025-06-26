@@ -1,13 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
-use glam::{Mat4, Vec2, Vec3};
+use glam::{Mat4, Vec2, Vec4};
 use leptos::prelude::{GetUntracked, RwSignal};
 use web_sys::{HtmlCanvasElement, PointerEvent};
 
 use crate::{
     components::{
         demo::to_clip_space,
-        demos::utils::{add_listener, InstanceCtx, RenderPass},
+        demos::utils::{InstanceCtx, RenderPass, add_listener},
     },
     meshes::{
         quad::{QUAD_INDICES, QUAD_VERTS},
@@ -16,14 +16,15 @@ use crate::{
     render::renderer::{
         camera_input::CameraInput,
         gpu::{
-            gpu_state::{
-                create_idx_buff_init, create_vert_buff_init, FrameCtx, Projection
-            }, GpuState
+            GpuState,
+            gpu_state::{FrameCtx, Projection, create_idx_buff_init, create_vert_buff_init},
         },
         instance::InstanceRaw,
         vertex::Vertex,
     },
 };
+
+use super::main::Joint;
 
 fn make_joint_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPipeline {
     let color_target = Some(wgpu::ColorTargetState {
@@ -86,25 +87,34 @@ fn make_joint_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
         })
 }
 
-/// Build one model matrix per joint.
-fn build_instance_mats(points: &[Vec2], big: f32) -> Vec<InstanceRaw> {
-    points
+/// Build one column-major model matrix per joint, ready for instancing.
+/// (scale → rotate → translate in a single shot, no trigonometry)
+fn build_joint_instances(joints: &[Joint]) -> Vec<InstanceRaw> {
+    joints
         .iter()
-        .enumerate()
-        .map(|(_, p)| {
-            let r = big;
-            let model = Mat4::from_scale_rotation_translation(
-                Vec3::new(r, r, 1.0),    // xy-scale, no z-thickness
-                glam::Quat::IDENTITY,    // no rotation
-                Vec3::new(p.x, p.y, 0.), // clip-space translation
+        .map(|j| {
+            // local axes in world space
+            let right = Vec2::new(j.dir().x, j.dir().y) * j.axes.x;
+            let up = Vec2::new(-j.dir().y, j.dir().x) * j.axes.y;
+
+            let model = Mat4::from_cols(
+                // column 0: right-vector (x-axis)
+                Vec4::new(right.x, right.y, 0.0, 0.0),
+                // column 1: up-vector (y-axis)
+                Vec4::new(up.x, up.y, 0.0, 0.0),
+                // column 2: Z-axis (flat in XY plane)
+                Vec4::new(0.0, 0.0, 1.0, 0.0),
+                // column 3: translation
+                Vec4::new(j.center.x, j.center.y, 0.0, 1.0),
             );
+
             InstanceRaw::from_mat4(model)
         })
         .collect()
 }
 
 pub(crate) fn make_spine_rpass(
-    points: Rc<RefCell<Vec<Vec2>>>,
+    joints: Rc<RefCell<Vec<Joint>>>,
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
 ) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
@@ -112,7 +122,7 @@ pub(crate) fn make_spine_rpass(
 
     // clone handles that must live inside the closure
     let pipe_handle = pipeline.clone();
-    let pts_handle = points.clone();
+    let joints_handle = joints.clone();
     let vs_handle = vs_src.clone();
     let fs_handle = fs_src.clone();
 
@@ -131,14 +141,10 @@ pub(crate) fn make_spine_rpass(
             }
 
             if vbuf_handle.borrow().is_none() {
-                *vbuf_handle.borrow_mut() = Some(create_vert_buff_init(
-                    &st.surface_context,
-                    QUAD_VERTS,
-                ));
-                *ibuf_handle.borrow_mut() = Some(create_idx_buff_init(
-                    &st.surface_context,
-                    QUAD_INDICES,
-                ));
+                *vbuf_handle.borrow_mut() =
+                    Some(create_vert_buff_init(&st.surface_context, QUAD_VERTS));
+                *ibuf_handle.borrow_mut() =
+                    Some(create_idx_buff_init(&st.surface_context, QUAD_INDICES));
             }
 
             if inst_handle.borrow().is_none() {
@@ -150,7 +156,7 @@ pub(crate) fn make_spine_rpass(
                 let inst = inst_ref.as_mut().unwrap();
 
                 inst.sync_instances(&st.surface_context, || {
-                    build_instance_mats(&pts_handle.borrow(), 0.05)
+                    build_joint_instances(&joints_handle.borrow())
                 });
             }
 
@@ -267,7 +273,7 @@ pub(crate) fn make_strip_rpass(
     let vs_handle = vs_src.clone();
     let fs_handle = fs_src.clone();
 
-    let vbuf_handle:  Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
+    let vbuf_handle: Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
     let mut v_count = 0;
 
     let pass = Rc::new(RefCell::new(
@@ -291,10 +297,8 @@ pub(crate) fn make_strip_rpass(
                 // NOTE: no indices needed because this is a strip
                 st.num_indices = 0;
 
-                *vbuf_handle.borrow_mut() = Some(create_vert_buff_init(
-                    &st.surface_context,
-                    &verts,
-                ));
+                *vbuf_handle.borrow_mut() =
+                    Some(create_vert_buff_init(&st.surface_context, &verts));
 
                 v_count = verts.len();
             }
