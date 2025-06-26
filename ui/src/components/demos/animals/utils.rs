@@ -18,13 +18,14 @@ use crate::{
         gpu::{
             GpuState,
             gpu_state::{FrameCtx, Projection, create_idx_buff_init, create_vert_buff_init},
+            surface_context::SurfaceContext,
         },
         instance::InstanceRaw,
         vertex::Vertex,
     },
 };
 
-use super::main::Joint;
+use super::main::{Animal, Joint};
 
 fn make_joint_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPipeline {
     let color_target = Some(wgpu::ColorTargetState {
@@ -114,15 +115,15 @@ fn build_joint_instances(joints: &[Joint]) -> Vec<InstanceRaw> {
 }
 
 pub(crate) fn make_spine_rpass(
-    joints: Rc<RefCell<Vec<Joint>>>,
+    points: Rc<RefCell<Vec<Vec2>>>,
+    snake: Rc<RefCell<Animal>>,
+
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
 ) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
     let pipeline = Rc::new(RefCell::new(None));
-
-    // clone handles that must live inside the closure
     let pipe_handle = pipeline.clone();
-    let joints_handle = joints.clone();
+
     let vs_handle = vs_src.clone();
     let fs_handle = fs_src.clone();
 
@@ -152,12 +153,18 @@ pub(crate) fn make_spine_rpass(
             }
 
             {
-                let mut inst_ref = inst_handle.borrow_mut();
-                let inst = inst_ref.as_mut().unwrap();
+                let pts = points.borrow();
+                let mut s = snake.borrow_mut();
+                s.recompute_joints(&pts);
+            }
 
-                inst.sync_instances(&st.surface_context, || {
-                    build_joint_instances(&joints_handle.borrow())
-                });
+            {
+                let mut binding = inst_handle.borrow_mut();
+                let inst = binding.as_mut().unwrap();
+
+                let s = snake.borrow();
+
+                inst.sync_instances(&st.surface_context, || build_joint_instances(&s.spine));
             }
 
             // 3) bind + draw
@@ -258,53 +265,66 @@ fn make_bones_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
         })
 }
 
-pub(crate) fn make_skin_pass(
-    points: Rc<RefCell<Vec<Vec2>>>,
-    width: f32,
+fn create_skin_vbuf(sc: &SurfaceContext, byte_cap: u64) -> wgpu::Buffer {
+    sc.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("skin-vbuf"),
+        size: byte_cap,
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    })
+}
 
+pub(crate) fn make_skin_rpass(
+    points: Rc<RefCell<Vec<Vec2>>>,
+    snake: Rc<RefCell<Animal>>,
+    width: f32,
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
 ) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
     let pipeline = Rc::new(RefCell::new(None));
-
-    // clone handles that must live inside the closure
     let pipe_handle = pipeline.clone();
-    let pts_handle = points.clone();
-    let vs_handle = vs_src.clone();
-    let fs_handle = fs_src.clone();
 
-    let vbuf_handle: Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
-    let mut v_count = 0;
+    let vbuf = Rc::new(RefCell::new(None)); // the GPU buffer
+    let vbuf_cap = Rc::new(RefCell::new(0u64)); // capacity in bytes
+    let vert_count = Rc::new(RefCell::new(0usize)); // how many verts *this* frame
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
+
             st.populate_common_buffers(&Projection::FlatQuad, cam);
 
-            let vs = vs_handle.get_untracked();
-            let fs = fs_handle.get_untracked();
-
-            // (re)build if missing
+            // (re-)compile pipeline if needed
             if pipe_handle.borrow().is_none() {
-                *pipe_handle.borrow_mut() = Some(make_bones_pipe(&st, &vs, &fs));
+                let pipe = make_bones_pipe(st, &vs_src.get_untracked(), &fs_src.get_untracked());
+                *pipe_handle.borrow_mut() = Some(pipe);
             }
 
-            if vbuf_handle.borrow().is_none() {
-                let verts = {
-                    let pts = pts_handle.borrow();
-                    stroke_polyline(&pts, width)
-                };
+            // ── 1. rebuild the *CPU* vertex list ────────────────────────────
+            let verts: Vec<Vertex> = {
+                let mut s = snake.borrow_mut();
+                s.compute_skin(); // refresh skin points
+                stroke_polyline(&s.skin, width) // Vec<Vertex>
+            };
 
-                // NOTE: no indices needed because this is a strip
-                st.num_indices = 0;
-
-                *vbuf_handle.borrow_mut() =
-                    Some(create_vert_buff_init(&st.surface_context, &verts));
-
-                v_count = verts.len();
+            // ── 2. ensure GPU buffer is big enough ─────────────────────────
+            let need_bytes = (verts.len() * std::mem::size_of::<Vertex>()) as u64;
+            if vbuf.borrow().is_none() || need_bytes > *vbuf_cap.borrow() {
+                let new_cap = need_bytes.next_power_of_two().max(256); // 256-byte min
+                *vbuf.borrow_mut() = Some(create_skin_vbuf(&st.surface_context, new_cap));
+                *vbuf_cap.borrow_mut() = new_cap;
             }
 
+            // ── 3. upload data for this frame ──────────────────────────────
+            st.surface_context.queue.write_buffer(
+                vbuf.borrow().as_ref().unwrap(),
+                0,
+                bytemuck::cast_slice(&verts),
+            );
+            *vert_count.borrow_mut() = verts.len();
+
+            // ── 4. draw ────────────────────────────────────────────────────
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("polyline pass"),
+                label: Some("skin pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &ctx.color_view,
                     resolve_target: None,
@@ -318,14 +338,9 @@ pub(crate) fn make_skin_pass(
             });
 
             rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
-
-            let binding = vbuf_handle.borrow();
-            let vbuf = binding.as_ref().unwrap();
-
-            rp.set_vertex_buffer(0, vbuf.slice(..));
+            rp.set_vertex_buffer(0, vbuf.borrow().as_ref().unwrap().slice(..));
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
-
-            rp.draw(0..v_count as u32, 0..1);
+            rp.draw(0..*vert_count.borrow() as u32, 0..1);
         },
     ));
 

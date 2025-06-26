@@ -13,7 +13,7 @@ use crate::{
     render::renderer::{camera_input::CameraInput, gpu::GpuState},
 };
 
-use super::utils::{drag_head_to_cursor, make_spine_rpass, make_skin_pass, solve_chain};
+use super::utils::{drag_head_to_cursor, make_skin_rpass, make_spine_rpass, solve_chain};
 
 pub(crate) const CANVAS_ID: &str = "animals-canvas";
 
@@ -154,7 +154,37 @@ pub struct Animal {
 
 impl Animal {
     fn new(joints: Vec<Joint>) -> Animal {
+        let mut a = Animal {
+            spine: joints,
+            skin: Vec::new(),
+        };
+
+        a.compute_skin();
+
+        a
+    }
+
+    pub fn recompute_joints(&mut self, pts: &Vec<Vec2>) {
+        for (i, p) in pts.iter().enumerate() {
+            let center = *p;
+
+            let dir = {
+                if i == pts.len() - 1 {
+                    -(p - pts[i - 1]).normalize()
+                } else {
+                    (p - pts[i + 1]).normalize()
+                }
+            };
+
+            self.spine[i].dir = dir;
+            self.spine[i].center = center;
+        }
+    }
+
+    pub fn compute_skin(&mut self) {
         let mut skin = VecDeque::new();
+        let joints = &self.spine;
+
         for (i, j) in joints.iter().enumerate() {
             let v = {
                 if i == joints.len() - 1 {
@@ -182,10 +212,7 @@ impl Animal {
             }
         }
 
-        Animal {
-            spine: joints,
-            skin: skin.into(),
-        }
+        self.skin = skin.into();
     }
 }
 
@@ -200,23 +227,23 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let gpu_support = RwSignal::new(true);
     let show_hint = RwSignal::new(true);
 
-    let mut joints = vec![
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.025), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.05), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.10), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.15), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.20), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.25), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.15), Vec2::ZERO),
-        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.10), Vec2::ZERO),
+    let sizes = vec![
+        Vec2::new(0.1, 0.10),
+        Vec2::new(0.1, 0.15),
+        Vec2::new(0.1, 0.25),
+        Vec2::new(0.1, 0.20),
+        Vec2::new(0.1, 0.15),
+        Vec2::new(0.1, 0.10),
+        Vec2::new(0.1, 0.05),
+        Vec2::new(0.1, 0.025),
     ];
 
     let snake = {
         let pts = points_rc.borrow();
 
-        let mut i = 0;
-        for (p, j) in pts.iter().zip(&mut joints) {
-            j.center = *p;
+        let mut joints = Vec::with_capacity(pts.len());
+        for (i, (p, s)) in pts.iter().zip(sizes.clone()).enumerate() {
+            let center = *p;
 
             let dir = {
                 if i == pts.len() - 1 {
@@ -226,23 +253,32 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
                 }
             };
 
-            j.set_dir(dir);
-
-            i += 1;
+            joints.push(Joint::new(
+                center,
+                Vec2::new(s[0], s[1]),
+                dir,
+            ));
         }
 
         Animal::new(joints.clone())
     };
 
-    let joints_rc = Rc::new(RefCell::new(joints));
+    let snake_rc = Rc::new(RefCell::new(snake));
 
-    let (strip_pass, strip_pipe) = make_skin_pass(
-        Rc::new(RefCell::new(snake.skin.clone())),
+    let (spine_pass, spine_pipe) = make_spine_rpass(
+        points_rc.clone(),
+        snake_rc.clone(),
+        vs_src,
+        fs_src,
+    );
+
+    let (strip_pass, strip_pipe) = make_skin_rpass(
+        points_rc.clone(),
+        snake_rc.clone(),
         0.05,
         vs_src,
         fs_src,
     );
-    let (spine_pass, spine_pipe) = make_spine_rpass(joints_rc.clone(), vs_src, fs_src);
 
     {
         let vs_src = vs_src.clone();
@@ -267,7 +303,6 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         vec![
             strip_pass,
             spine_pass,
-            make_points_rpass(Rc::new(RefCell::new(snake.skin.clone())), [0., 1., 0., 0.]),
             make_points_rpass(points_rc.clone(), [1., 0., 0., 0.]),
         ],
         drag_head_to_cursor(points_rc.clone()),
