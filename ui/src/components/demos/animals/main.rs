@@ -13,7 +13,7 @@ use crate::{
     render::renderer::{camera_input::CameraInput, gpu::GpuState},
 };
 
-use super::utils::{drag_head_to_cursor, make_spine_rpass, make_strip_rpass, solve_chain};
+use super::utils::{drag_head_to_cursor, make_spine_rpass, make_skin_pass, solve_chain};
 
 pub(crate) const CANVAS_ID: &str = "animals-canvas";
 
@@ -236,7 +236,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
 
     let joints_rc = Rc::new(RefCell::new(joints));
 
-    let (strip_pass, strip_pipe) = make_strip_rpass(
+    let (strip_pass, strip_pipe) = make_skin_pass(
         Rc::new(RefCell::new(snake.skin.clone())),
         0.05,
         vs_src,

@@ -258,7 +258,7 @@ fn make_bones_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
         })
 }
 
-pub(crate) fn make_strip_rpass(
+pub(crate) fn make_skin_pass(
     points: Rc<RefCell<Vec<Vec2>>>,
     width: f32,
 
