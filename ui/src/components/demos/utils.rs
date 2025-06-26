@@ -1,3 +1,6 @@
+use wgpu::util::DeviceExt;
+use wgpu::BindGroup;
+use wgpu::Device;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -403,12 +406,60 @@ pub fn start_rendering<F, G>(
     });
 }
 
-fn make_debug_pipe(st: &GpuState) -> wgpu::RenderPipeline {
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct DebugColour { rgba: [f32; 4] }
+
+fn color_buffer_init(dev: &Device, color: [f32; 4]) -> wgpu::Buffer {
+    dev.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("debug-colour UBO"),
+        contents: bytemuck::bytes_of(&DebugColour { rgba: color }),
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    })
+}
+
+fn color_bgl(dev: &Device) -> wgpu::BindGroupLayout {
+    dev.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("debug-colour BGL"),
+        entries: &[wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: wgpu::BufferSize::new(std::mem::size_of::<DebugColour>() as _),
+            },
+            count: None,
+        }],
+    })
+}
+
+fn init_color_bg(buf: wgpu::Buffer, bgl: &wgpu::BindGroupLayout,  dev: &Device) -> wgpu::BindGroup {
+    dev.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("debug-colour BG"),
+        layout: &bgl,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: buf.as_entire_binding(),
+        }],
+    })
+}
+
+fn make_debug_pipe(st: &GpuState, color_bgl: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
+    let pipe_layout = st.surface_context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("debug pipeline layout"),
+        bind_group_layouts: &[
+            &st.resource_context.common_bind_group.layout,
+            color_bgl,
+        ],
+        push_constant_ranges: &[],
+    });
+
     st.surface_context
         .device
         .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("draw in points for debugging"),
-            layout: None,
+            layout: Some(&pipe_layout),
             cache: None,
             vertex: wgpu::VertexState {
                 module: &st.surface_context.device.create_shader_module(
@@ -469,7 +520,11 @@ fn map_quads_to_points(r: f32, pts_handle: &Rc<RefCell<Vec<Vec2>>>) -> Vec<Insta
         .collect()
 }
 
-pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
+
+pub(crate) fn make_points_rpass(
+    points: Rc<RefCell<Vec<Vec2>>>,
+    color: [f32; 4],
+) -> RenderPass {
     let pipeline = Rc::new(RefCell::new(None));
 
     let pipe_handle = pipeline.clone();
@@ -479,10 +534,19 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
     let ibuf_handle: Rc<RefCell<Option<wgpu::Buffer>>> = Rc::new(RefCell::new(None));
     let inst_handle: Rc<RefCell<Option<InstanceCtx>>> = Rc::new(RefCell::new(None));
 
+    let color_bg_handle: Rc<RefCell<Option<BindGroup>>> = Rc::new(RefCell::new(None));
+
     Rc::new(RefCell::new(
         move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
             if pipe_handle.borrow().is_none() {
-                *pipe_handle.borrow_mut() = Some(make_debug_pipe(st));
+
+                let buf = color_buffer_init(&st.surface_context.device, color);
+                let cbgl = color_bgl(&st.surface_context.device);
+
+                let color_bg = init_color_bg(buf, &cbgl, &st.surface_context.device);
+
+                *color_bg_handle.borrow_mut() = Some(color_bg);
+                *pipe_handle.borrow_mut() = Some(make_debug_pipe(st, &cbgl));
             }
 
             if vbuf_handle.borrow().is_none() {
@@ -535,6 +599,7 @@ pub(crate) fn make_points_rpass(points: Rc<RefCell<Vec<Vec2>>>) -> RenderPass {
             rp.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint16);
 
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
+            rp.set_bind_group(1, color_bg_handle.borrow().as_ref().unwrap(), &[]);
 
             let idx_count = QUAD_INDICES.len() as u32;
             let inst_count = inst_handle.borrow().as_ref().unwrap().count;
