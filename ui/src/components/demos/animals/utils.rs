@@ -254,6 +254,8 @@ fn make_bones_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPip
 
 pub(crate) fn make_strip_rpass(
     points: Rc<RefCell<Vec<Vec2>>>,
+    width: f32,
+
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
 ) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
@@ -283,7 +285,7 @@ pub(crate) fn make_strip_rpass(
             if vbuf_handle.borrow().is_none() {
                 let verts = {
                     let pts = pts_handle.borrow();
-                    stroke_polyline(&pts, 0.15)
+                    stroke_polyline(&pts, width)
                 };
 
                 // NOTE: no indices needed because this is a strip
