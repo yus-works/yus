@@ -273,7 +273,6 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     );
 
     let (strip_pass, strip_pipe) = make_skin_rpass(
-        points_rc.clone(),
         snake_rc.clone(),
         0.05,
         vs_src,

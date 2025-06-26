@@ -19,6 +19,7 @@ use crate::{
             GpuState,
             gpu_state::{FrameCtx, Projection, create_idx_buff_init, create_vert_buff_init},
             surface_context::SurfaceContext,
+            vertex_ctx::VertexCtx,
         },
         instance::InstanceRaw,
         vertex::Vertex,
@@ -275,7 +276,6 @@ fn create_skin_vbuf(sc: &SurfaceContext, byte_cap: u64) -> wgpu::Buffer {
 }
 
 pub(crate) fn make_skin_rpass(
-    points: Rc<RefCell<Vec<Vec2>>>,
     snake: Rc<RefCell<Animal>>,
     width: f32,
     vs_src: RwSignal<String>,
@@ -284,13 +284,10 @@ pub(crate) fn make_skin_rpass(
     let pipeline = Rc::new(RefCell::new(None));
     let pipe_handle = pipeline.clone();
 
-    let vbuf = Rc::new(RefCell::new(None)); // the GPU buffer
-    let vbuf_cap = Rc::new(RefCell::new(0u64)); // capacity in bytes
-    let vert_count = Rc::new(RefCell::new(0usize)); // how many verts *this* frame
+    let skin_ctx = Rc::new(RefCell::new(None::<VertexCtx<Vertex>>));
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
-
             st.populate_common_buffers(&Projection::FlatQuad, cam);
 
             // (re-)compile pipeline if needed
@@ -299,30 +296,24 @@ pub(crate) fn make_skin_rpass(
                 *pipe_handle.borrow_mut() = Some(pipe);
             }
 
-            // ── 1. rebuild the *CPU* vertex list ────────────────────────────
-            let verts: Vec<Vertex> = {
-                let mut s = snake.borrow_mut();
-                s.compute_skin(); // refresh skin points
-                stroke_polyline(&s.skin, width) // Vec<Vertex>
-            };
-
-            // ── 2. ensure GPU buffer is big enough ─────────────────────────
-            let need_bytes = (verts.len() * std::mem::size_of::<Vertex>()) as u64;
-            if vbuf.borrow().is_none() || need_bytes > *vbuf_cap.borrow() {
-                let new_cap = need_bytes.next_power_of_two().max(256); // 256-byte min
-                *vbuf.borrow_mut() = Some(create_skin_vbuf(&st.surface_context, new_cap));
-                *vbuf_cap.borrow_mut() = new_cap;
+            // lazily create helper ctx
+            if skin_ctx.borrow().is_none() {
+                *skin_ctx.borrow_mut() = Some(VertexCtx::<Vertex>::new(&st.surface_context, 1024));
             }
 
-            // ── 3. upload data for this frame ──────────────────────────────
-            st.surface_context.queue.write_buffer(
-                vbuf.borrow().as_ref().unwrap(),
-                0,
-                bytemuck::cast_slice(&verts),
-            );
-            *vert_count.borrow_mut() = verts.len();
+            {
+                let mut ctx_v = skin_ctx.borrow_mut();
+                let vc = ctx_v.as_mut().unwrap();
 
-            // ── 4. draw ────────────────────────────────────────────────────
+                let verts = {
+                    let mut s = snake.borrow_mut();
+                    s.compute_skin();
+                    stroke_polyline(&s.skin, width) // Vec<Vertex>
+                };
+
+                vc.sync(&st.surface_context, |v| v.extend(verts));
+            }
+
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("skin pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -337,10 +328,13 @@ pub(crate) fn make_skin_rpass(
                 ..Default::default()
             });
 
+            let vc = skin_ctx.borrow();
+            let vc = vc.as_ref().unwrap();
+
             rp.set_pipeline(pipe_handle.borrow().as_ref().unwrap());
-            rp.set_vertex_buffer(0, vbuf.borrow().as_ref().unwrap().slice(..));
+            rp.set_vertex_buffer(0, vc.buf.slice(..));
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
-            rp.draw(0..*vert_count.borrow() as u32, 0..1);
+            rp.draw(0..vc.count as u32, 0..1);
         },
     ));
 
