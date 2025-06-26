@@ -109,6 +109,30 @@ impl Joint {
         Some((hit(n1), hit(n2)))
     }
 
+    /// Return the world-space hit-point where the normalised direction `v`
+    /// (given in world space) intersects this ellipse.
+    /// `None` if `v` is the zero vector.
+    pub fn hit_point(&self, v: Vec2) -> Option<Vec2> {
+        if v.length_squared() == 0.0 {
+            return None;
+        }
+
+        // 1. put the direction into the ellipse’s *local* frame (rotate −θ)
+        let dir_inv = Vec2::new(self.dir.x, -self.dir.y); // (cosθ,−sinθ)
+        let v_local = rotate_vec_static(v.normalize(), dir_inv); // unit-length
+
+        // 2. solve the quadratic on the axis-aligned ellipse
+        //    (x/a)² + (y/b)² = 1  →  scale factor `s`
+        let denom = (v_local.x * v_local.x) / (self.axes.x * self.axes.x)
+            + (v_local.y * v_local.y) / (self.axes.y * self.axes.y);
+
+        let s = 1.0 / denom.sqrt();
+        let hit_local = v_local * s; // point in local space
+
+        // 3. rotate back to world space and translate by centre
+        Some(self.rotate_vec(hit_local) + self.center)
+    }
+
     #[inline]
     pub fn rotate_vec(&self, v: Vec2) -> Vec2 {
         rotate_vec_static(v, self.dir)
