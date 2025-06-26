@@ -1,5 +1,7 @@
 use leptos::{
-    component, prelude::{Effect, Get, RwSignal}, view, IntoView
+    IntoView, component,
+    prelude::{Effect, Get, RwSignal},
+    view,
 };
 
 use glam::Vec2;
@@ -88,17 +90,16 @@ impl Joint {
             return None;
         }
 
-        let n1 = Vec2::new(-v.y,  v.x);
-        let n2 = Vec2::new( v.y, -v.x);
+        let n1 = Vec2::new(-v.y, v.x);
+        let n2 = Vec2::new(v.y, -v.x);
 
-        let dir_inv = Vec2::new(self.dir.x, -self.dir.y);   // (cosθ, −sinθ)
+        let dir_inv = Vec2::new(self.dir.x, -self.dir.y); // (cosθ, −sinθ)
 
         let hit = |d: Vec2| -> Vec2 {
             let d_local = rotate_vec_static(d, dir_inv);
 
-            let denom =
-                (d_local.x * d_local.x) / (self.axes.x * self.axes.x) +
-                (d_local.y * d_local.y) / (self.axes.y * self.axes.y);
+            let denom = (d_local.x * d_local.x) / (self.axes.x * self.axes.x)
+                + (d_local.y * d_local.y) / (self.axes.y * self.axes.y);
 
             let s = 1.0 / denom.sqrt();
 
@@ -141,9 +142,19 @@ impl Animal {
                 }
             };
 
+            if i == 0 {
+                skin.push_front(j.hit_point(v).expect("Vector is zero??"));
+                skin.push_back(j.hit_point(v).expect("Vector is zero??"));
+            }
+
             if let Some((n1, n2)) = j.normal_points(v) {
                 skin.push_front(n1);
                 skin.push_back(n2);
+            }
+
+            if i == joints.len() - 1 {
+                skin.push_front(j.hit_point(-v).expect("Vector is zero??"));
+                skin.push_back(j.hit_point(-v).expect("Vector is zero??"));
             }
         }
 
@@ -166,10 +177,14 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let show_hint = RwSignal::new(true);
 
     let mut joints = vec![
+        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.025), Vec2::ZERO),
+        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.05), Vec2::ZERO),
         Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.10), Vec2::ZERO),
         Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.15), Vec2::ZERO),
         Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.20), Vec2::ZERO),
         Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.25), Vec2::ZERO),
+        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.15), Vec2::ZERO),
+        Joint::new(Vec2::ZERO, Vec2::new(0.1, 0.10), Vec2::ZERO),
     ];
 
     let snake = {
