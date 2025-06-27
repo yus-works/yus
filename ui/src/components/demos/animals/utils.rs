@@ -154,12 +154,6 @@ pub(crate) fn make_spine_rpass(
             }
 
             {
-                let pts = points.borrow();
-                let mut s = snake.borrow_mut();
-                s.recompute_joints(&pts);
-            }
-
-            {
                 let mut binding = inst_handle.borrow_mut();
                 let inst = binding.as_mut().unwrap();
 

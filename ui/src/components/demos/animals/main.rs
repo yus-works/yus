@@ -1,7 +1,5 @@
 use leptos::{
-    IntoView, component,
-    prelude::{Effect, Get, RwSignal},
-    view,
+    component, prelude::{Effect, Get, RwSignal}, view, IntoView
 };
 
 use glam::Vec2;
@@ -293,7 +291,14 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
             make_points_rpass(points_rc.clone(), [1., 0., 0., 0.]),
         ],
         drag_head_to_cursor(points_rc.clone()),
-        solve_chain(points_rc.clone(), 0.15, 9),
+        move || {
+            solve_chain(points_rc.clone(), 0.15, 9)();
+
+            {
+                let pts = points_rc.borrow();
+                snake_rc.borrow_mut().recompute_joints(&pts);
+            }
+        }
     );
 
     view! {
