@@ -220,7 +220,8 @@ impl Animal {
 pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
 
-    let points_rc: Rc<RefCell<Vec<Vec2>>> = Rc::new(RefCell::new(meshes::strip::worm()));
+    let points_rc: Rc<RefCell<Vec<Vec2>>> =
+        Rc::new(RefCell::new(meshes::animals::FISH_SPINE.to_vec()));
 
     let camera_rc: Rc<RefCell<Option<CameraInput>>> = Rc::new(RefCell::new(None));
 
@@ -253,11 +254,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
                 }
             };
 
-            joints.push(Joint::new(
-                center,
-                Vec2::new(s[0], s[1]),
-                dir,
-            ));
+            joints.push(Joint::new(center, Vec2::new(s[0], s[1]), dir));
         }
 
         Animal::new(joints.clone())
@@ -265,19 +262,10 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
 
     let snake_rc = Rc::new(RefCell::new(snake));
 
-    let (spine_pass, spine_pipe) = make_spine_rpass(
-        points_rc.clone(),
-        snake_rc.clone(),
-        vs_src,
-        fs_src,
-    );
+    let (spine_pass, spine_pipe) =
+        make_spine_rpass(points_rc.clone(), snake_rc.clone(), vs_src, fs_src);
 
-    let (strip_pass, strip_pipe) = make_skin_rpass(
-        snake_rc.clone(),
-        0.05,
-        vs_src,
-        fs_src,
-    );
+    let (strip_pass, strip_pipe) = make_skin_rpass(snake_rc.clone(), 0.05, vs_src, fs_src);
 
     {
         let vs_src = vs_src.clone();
