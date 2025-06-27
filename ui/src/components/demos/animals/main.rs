@@ -263,7 +263,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let (spine_pass, spine_pipe) =
         make_spine_rpass(points_rc.clone(), snake_rc.clone(), vs_src, fs_src);
 
-    let (strip_pass, strip_pipe) = make_skin_rpass(snake_rc.clone(), 0.05, vs_src, fs_src);
+    let (skin_pass, strip_pipe) = make_skin_rpass(snake_rc.clone(), 0.05, vs_src, fs_src);
 
     {
         let vs_src = vs_src.clone();
@@ -286,7 +286,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         gpu_support,
         CANVAS_ID,
         vec![
-            strip_pass,
+            skin_pass,
             spine_pass,
             make_points_rpass(points_rc.clone(), [1., 0., 0., 0.]),
         ],
