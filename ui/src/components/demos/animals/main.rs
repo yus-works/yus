@@ -263,12 +263,12 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let (spine_pass, spine_pipe) =
         make_spine_rpass(points_rc.clone(), snake_rc.clone(), vs_src, fs_src);
 
-    let (skin_pass, strip_pipe) = make_skin_rpass(snake_rc.clone(), 0.05, vs_src, fs_src);
+    let (skin_pass, skin_pipe) = make_skin_rpass(snake_rc.clone(), 0.05, vs_src, fs_src);
 
     {
         let vs_src = vs_src.clone();
         let fs_src = fs_src.clone();
-        let pipes = [strip_pipe.clone(), spine_pipe.clone()];
+        let pipes = [skin_pipe.clone(), spine_pipe.clone()];
 
         Effect::new(move |_| {
             vs_src.get();
