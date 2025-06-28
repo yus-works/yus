@@ -1,9 +1,11 @@
 use leptos::{
-    component, prelude::{Effect, Get, RwSignal}, view, IntoView
+    IntoView, component,
+    prelude::{Effect, Get, RwSignal},
+    view,
 };
 
 use glam::Vec2;
-use std::{cell::RefCell, collections::VecDeque, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     components::demos::utils::{make_points_rpass, start_rendering},
@@ -147,14 +149,14 @@ impl Joint {
 
 pub struct Animal {
     pub spine: Vec<Joint>,
-    pub skin: Vec<Vec2>,
+    pub skin: Rc<RefCell<Vec<Vec2>>>,
 }
 
 impl Animal {
     fn new(joints: Vec<Joint>) -> Animal {
         let mut a = Animal {
             spine: joints,
-            skin: Vec::new(),
+            skin: Rc::new(RefCell::new(Vec::new())),
         };
 
         a.compute_skin();
@@ -180,7 +182,9 @@ impl Animal {
     }
 
     pub fn compute_skin(&mut self) {
-        let mut skin = VecDeque::new();
+        let mut skin_left = Vec::new();
+        let mut skin_rght = Vec::new();
+
         let joints = &self.spine;
 
         for (i, j) in joints.iter().enumerate() {
@@ -195,22 +199,24 @@ impl Animal {
             };
 
             if i == 0 {
-                skin.push_front(j.hit_point(v).expect("Vector is zero??"));
-                skin.push_back(j.hit_point(v).expect("Vector is zero??"));
+                skin_left.push(j.hit_point(v).expect("Vector is zero??"));
+                skin_rght.push(j.hit_point(v).expect("Vector is zero??"));
             }
 
             if let Some((n1, n2)) = j.normal_points(v) {
-                skin.push_front(n1);
-                skin.push_back(n2);
+                skin_left.push(n1);
+                skin_rght.push(n2);
             }
 
             if i == joints.len() - 1 {
-                skin.push_front(j.hit_point(-v).expect("Vector is zero??"));
-                skin.push_back(j.hit_point(-v).expect("Vector is zero??"));
+                skin_left.push(j.hit_point(-v).expect("Vector is zero??"));
+                skin_rght.push(j.hit_point(-v).expect("Vector is zero??"));
             }
         }
 
-        self.skin = skin.into();
+        skin_rght.reverse();
+        skin_left.extend(skin_rght);
+        *self.skin.borrow_mut() = skin_left;
     }
 }
 
@@ -263,7 +269,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
     let (spine_pass, spine_pipe) =
         make_spine_rpass(points_rc.clone(), snake_rc.clone(), vs_src, fs_src);
 
-    let (skin_pass, skin_pipe) = make_skin_rpass(snake_rc.clone(), 0.05, vs_src, fs_src);
+    let (skin_pass, skin_pipe) = make_skin_rpass(snake_rc.clone(), 0.005, vs_src, fs_src);
 
     {
         let vs_src = vs_src.clone();
@@ -289,6 +295,7 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
             skin_pass,
             spine_pass,
             make_points_rpass(points_rc.clone(), [1., 0., 0., 0.]),
+            make_points_rpass(snake_rc.clone().borrow().skin.clone(), [0., 1., 0., 0.]),
         ],
         drag_head_to_cursor(points_rc.clone()),
         move || {
@@ -297,8 +304,9 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
             {
                 let pts = points_rc.borrow();
                 snake_rc.borrow_mut().recompute_joints(&pts);
+                snake_rc.borrow_mut().compute_skin();
             }
-        }
+        },
     );
 
     view! {

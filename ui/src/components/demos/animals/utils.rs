@@ -300,9 +300,9 @@ pub(crate) fn make_skin_rpass(
                 let vc = ctx_v.as_mut().unwrap();
 
                 let verts = {
-                    let mut s = snake.borrow_mut();
-                    s.compute_skin();
-                    stroke_polyline(&s.skin, width) // Vec<Vertex>
+                    let s = snake.borrow();
+                    let skin = &s.skin.borrow();
+                    stroke_polyline(skin, width) // Vec<Vertex>
                 };
 
                 vc.sync(&st.surface_context, |v| v.extend(verts));
