@@ -301,55 +301,7 @@ impl InstanceCtx {
     }
 }
 
-fn start_render_loop(
-    state_rc: Rc<RefCell<Option<GpuState>>>,
-    camera_rc: Rc<RefCell<Option<CameraInput>>>,
-
-    rpasses: Vec<RenderPass>,
-
-    mut on_frame: impl 'static + FnMut(),
-) {
-    let raf: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
-    let raf_clone = raf.clone();
-
-    *raf_clone.borrow_mut() = Some(Closure::wrap(Box::new(move |_: f64| {
-        on_frame();
-
-        // ── Run user passes --------------------------------------------------
-        if let (Some(state), Ok(cam_ref)) = (state_rc.borrow_mut().as_mut(), camera_rc.try_borrow())
-        {
-            let cam = cam_ref.as_ref().expect("CameraInput is None");
-
-            let mut ctx = state.begin_frame();
-
-            for pass in &rpasses {
-                (pass.borrow_mut())(state, cam, &mut ctx);
-            }
-
-            state.end_frame(ctx);
-        }
-
-        // ── Next frame -------------------------------------------------------
-        web_sys::window()
-            .unwrap()
-            .request_animation_frame(raf.borrow().as_ref().unwrap().as_ref().unchecked_ref())
-            .unwrap();
-    }) as Box<dyn FnMut(f64)>));
-
-    web_sys::window()
-        .unwrap()
-        .request_animation_frame(
-            raf_clone
-                .borrow()
-                .as_ref()
-                .unwrap()
-                .as_ref()
-                .unchecked_ref(),
-        )
-        .unwrap();
-}
-
-pub fn start_rendering<F, G>(
+pub fn start_rendering<OnReady, OnFrame>(
     state_rc: Rc<RefCell<Option<GpuState>>>,
     camera_rc: Rc<RefCell<Option<CameraInput>>>,
 
@@ -360,11 +312,11 @@ pub fn start_rendering<F, G>(
 
     rpasses: Vec<RenderPass>,
 
-    on_canvas_ready: F, // extra closure after canvas is ready hook
-    on_frame: G,        // extra closure to run every frame
+    on_canvas_ready: OnReady, // extra closure after canvas is ready hook
+    on_frame_ready: OnFrame,  // extra closure to run every frame
 ) where
-    F: 'static + Fn(&HtmlCanvasElement) + Clone,
-    G: 'static + FnMut() + Clone,
+    OnReady: 'static + Fn(&HtmlCanvasElement) + Clone,
+    OnFrame: 'static + FnMut() + Clone,
 {
     let canvas_id = canvas_id.to_owned();
     let on_canvas_ready = Rc::new(on_canvas_ready);
