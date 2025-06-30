@@ -26,6 +26,7 @@ web-sys                      = { workspace = true , features = [
     "Element",
     "DomRect",
 ], optional = true }
+leptos-use = "0.16.2"
 
 
 [features]

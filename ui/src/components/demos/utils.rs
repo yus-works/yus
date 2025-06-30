@@ -1,3 +1,5 @@
+use leptos_use::{UseRafFnOptions, use_raf_fn_with_options};
+use leptos_use::utils::Pausable;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wgpu::BindGroup;
@@ -7,9 +9,9 @@ use wgpu::util::DeviceExt;
 use crate::meshes::quad::QUAD_INDICES;
 use crate::meshes::quad::QUAD_VERTS;
 use crate::render::renderer::camera_input::CameraInput;
-use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::FrameCtx;
+use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::gpu_state::create_idx_buff_init;
 use crate::render::renderer::gpu::gpu_state::create_instance_buff;
 use crate::render::renderer::gpu::gpu_state::create_vert_buff_init;
@@ -318,9 +320,43 @@ pub fn start_rendering<OnReady, OnFrame>(
     OnReady: 'static + Fn(&HtmlCanvasElement) + Clone,
     OnFrame: 'static + FnMut() + Clone,
 {
+    let state_handle = state_rc.clone();
+    let camera_handle = camera_rc.clone();
+    let rpasses_handle = rpasses.clone();
+
+    let on_frame_rc = Rc::new(RefCell::new(on_frame_ready));
+    let raf_handle: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+
+    let Pausable { resume, .. } = use_raf_fn_with_options(
+        {
+            let on_frame_handle = on_frame_rc.clone();
+            move |_args| {
+                on_frame_handle.borrow_mut()();
+
+                if let (Some(state), Ok(cam_ref)) = (
+                    state_handle.borrow_mut().as_mut(),
+                    camera_handle.try_borrow(),
+                ) {
+                    let cam = cam_ref.as_ref().expect("CameraInput is None");
+                    let mut ctx = state.begin_frame();
+                    for pass in &rpasses_handle {
+                        (pass.borrow_mut())(state, cam, &mut ctx);
+                    }
+                    state.end_frame(ctx);
+                }
+            }
+        },
+
+        {
+            let o = UseRafFnOptions::default();
+            o.immediate(false)
+        }
+    );
+
+    *raf_handle.borrow_mut() = Some(Box::new(resume));
+
     let canvas_id = canvas_id.to_owned();
     let on_canvas_ready = Rc::new(on_canvas_ready);
-    let on_frame = on_frame.clone();
 
     Effect::new(move |_| {
         let state_rc_init = state_rc.clone();
@@ -331,12 +367,12 @@ pub fn start_rendering<OnReady, OnFrame>(
 
         let canvas_id = canvas_id.clone();
 
-        let rpasses_init = rpasses.clone();
-
         let on_ready = on_canvas_ready.clone();
-        let on_frame = on_frame.clone();
+        let raf_handle = raf_handle.clone();
 
         spawn_local(async move {
+            let raf_handle = raf_handle.clone();
+
             TimeoutFuture::new(0).await;
 
             let canvas = match get_canvas(&canvas_id) {
@@ -364,7 +400,9 @@ pub fn start_rendering<OnReady, OnFrame>(
 
             add_input_handlers(&camera_rc_init, &canvas, show_hint);
 
-            start_render_loop(state_rc_init, camera_rc_init, rpasses_init, on_frame);
+            if let Some(resume) = raf_handle.clone().borrow().as_ref() {
+                resume();
+            }
         });
     });
 }
@@ -410,7 +448,10 @@ fn init_color_bg(buf: wgpu::Buffer, bgl: &wgpu::BindGroupLayout, dev: &Device) -
     })
 }
 
-fn make_debug_points_pipe(st: &GpuState, color_bgl: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
+fn make_debug_points_pipe(
+    st: &GpuState,
+    color_bgl: &wgpu::BindGroupLayout,
+) -> wgpu::RenderPipeline {
     let pipe_layout =
         st.surface_context
             .device
