@@ -4,11 +4,15 @@ use leptos::{
     view,
 };
 
+use crate::pages::classic::classic::PassFlags;
+
 use glam::Vec2;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    components::demos::utils::{make_points_rpass, start_rendering},
+    components::demos::utils::{
+        make_points_rpass, start_rendering
+    },
     meshes,
     render::renderer::{camera_input::CameraInput, gpu::GpuState},
 };
@@ -221,7 +225,11 @@ impl Animal {
 }
 
 #[component]
-pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoView {
+pub fn Animals(
+    vs_src: RwSignal<String>,
+    fs_src: RwSignal<String>,
+    pass_flags: PassFlags,
+) -> impl IntoView {
     let state_rc: Rc<RefCell<Option<GpuState>>> = Rc::new(RefCell::new(None));
 
     let points_rc: Rc<RefCell<Vec<Vec2>>> =
@@ -266,10 +274,20 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
 
     let snake_rc = Rc::new(RefCell::new(snake));
 
-    let (spine_pass, spine_pipe) =
-        make_spine_rpass(points_rc.clone(), snake_rc.clone(), vs_src, fs_src);
+    let (spine_pass, spine_pipe) = make_spine_rpass(
+        snake_rc.clone(),
+        vs_src,
+        fs_src,
+        pass_flags.spine,
+    );
 
-    let (skin_pass, skin_pipe) = make_skin_rpass(snake_rc.clone(), 0.005, vs_src, fs_src);
+    let (skin_pass, skin_pipe) = make_skin_rpass(
+        snake_rc.clone(),
+        0.015,
+        vs_src,
+        fs_src,
+        pass_flags.skin,
+    );
 
     {
         let vs_src = vs_src.clone();
@@ -294,8 +312,16 @@ pub fn Animals(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl IntoV
         vec![
             skin_pass,
             spine_pass,
-            make_points_rpass(points_rc.clone(), [1., 0., 0., 0.]),
-            make_points_rpass(snake_rc.clone().borrow().skin.clone(), [0., 1., 0., 0.]),
+            make_points_rpass(
+                points_rc.clone(),
+                [1., 0., 0., 0.],
+                pass_flags.ctrl_pts,
+            ),
+            make_points_rpass(
+                snake_rc.clone().borrow().skin.clone(),
+                [0., 1., 0., 0.],
+                pass_flags.skin_pts
+            ),
         ],
         drag_head_to_cursor(points_rc.clone()),
         move || {

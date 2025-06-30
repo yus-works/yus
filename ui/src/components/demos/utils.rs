@@ -1,8 +1,8 @@
-use wgpu::util::DeviceExt;
-use wgpu::BindGroup;
-use wgpu::Device;
 use std::cell::RefCell;
 use std::rc::Rc;
+use wgpu::BindGroup;
+use wgpu::Device;
+use wgpu::util::DeviceExt;
 
 use crate::meshes::quad::QUAD_INDICES;
 use crate::meshes::quad::QUAD_VERTS;
@@ -242,6 +242,16 @@ fn add_input_handlers(
 }
 
 pub type RenderPass = Rc<RefCell<dyn FnMut(&mut GpuState, &CameraInput, &mut FrameCtx)>>;
+
+/// Which GPU sub-passes should run this frame?
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum PassKind {
+    Skin,
+    Spine,
+    CtrlPts,
+    SkinPts,
+}
+
 pub struct InstanceCtx {
     pub instances: Vec<InstanceRaw>,
     pub capacity: u32,
@@ -408,7 +418,9 @@ pub fn start_rendering<F, G>(
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct DebugColour { rgba: [f32; 4] }
+struct DebugColour {
+    rgba: [f32; 4],
+}
 
 fn color_buffer_init(dev: &Device, color: [f32; 4]) -> wgpu::Buffer {
     dev.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -434,7 +446,7 @@ fn color_bgl(dev: &Device) -> wgpu::BindGroupLayout {
     })
 }
 
-fn init_color_bg(buf: wgpu::Buffer, bgl: &wgpu::BindGroupLayout,  dev: &Device) -> wgpu::BindGroup {
+fn init_color_bg(buf: wgpu::Buffer, bgl: &wgpu::BindGroupLayout, dev: &Device) -> wgpu::BindGroup {
     dev.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("debug-colour BG"),
         layout: &bgl,
@@ -446,14 +458,14 @@ fn init_color_bg(buf: wgpu::Buffer, bgl: &wgpu::BindGroupLayout,  dev: &Device) 
 }
 
 fn make_debug_pipe(st: &GpuState, color_bgl: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
-    let pipe_layout = st.surface_context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("debug pipeline layout"),
-        bind_group_layouts: &[
-            &st.resource_context.common_bind_group.layout,
-            color_bgl,
-        ],
-        push_constant_ranges: &[],
-    });
+    let pipe_layout =
+        st.surface_context
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("debug pipeline layout"),
+                bind_group_layouts: &[&st.resource_context.common_bind_group.layout, color_bgl],
+                push_constant_ranges: &[],
+            });
 
     st.surface_context
         .device
@@ -520,10 +532,11 @@ fn map_quads_to_points(r: f32, pts_handle: &Rc<RefCell<Vec<Vec2>>>) -> Vec<Insta
         .collect()
 }
 
-
 pub(crate) fn make_points_rpass(
     points: Rc<RefCell<Vec<Vec2>>>,
     color: [f32; 4],
+
+    enabled: RwSignal<bool>,
 ) -> RenderPass {
     let pipeline = Rc::new(RefCell::new(None));
 
@@ -538,8 +551,11 @@ pub(crate) fn make_points_rpass(
 
     Rc::new(RefCell::new(
         move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
-            if pipe_handle.borrow().is_none() {
+            if !enabled.get_untracked() {
+                return;
+            }
 
+            if pipe_handle.borrow().is_none() {
                 let buf = color_buffer_init(&st.surface_context.device, color);
                 let cbgl = color_bgl(&st.surface_context.device);
 

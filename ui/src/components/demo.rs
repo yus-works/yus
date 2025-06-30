@@ -10,6 +10,8 @@ use leptos::{
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, HtmlElement, PointerEvent};
 
+use crate::pages::classic::classic::PassFlags;
+
 use super::demos::{animals::main::Animals, frag_intro::main::FragIntro, planet::main::CubePlanet};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -45,11 +47,16 @@ impl Demo {
     }
 
     /// Returns a View that mounts the proper canvas component
-    pub fn canvas(self, vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> AnyView {
+    pub fn canvas(
+        self,
+        vs_src: RwSignal<String>,
+        fs_src: RwSignal<String>,
+        pass_flags: PassFlags,
+    ) -> AnyView {
         match self {
-            Demo::Animals => view! { <Animals vs_src=vs_src fs_src=fs_src/> }.into_any(),
-            Demo::CubePlanet => view! { <CubePlanet vs_src=vs_src fs_src=fs_src/> }.into_any(),
-            Demo::FragIntro => view! { <FragIntro vs_src=vs_src fs_src=fs_src/> }.into_any(),
+            Demo::Animals => view! { <Animals vs_src fs_src pass_flags/> }.into_any(),
+            Demo::CubePlanet => view! { <CubePlanet vs_src fs_src/> }.into_any(),
+            Demo::FragIntro => view! { <FragIntro vs_src fs_src/> }.into_any(),
         }
     }
 }

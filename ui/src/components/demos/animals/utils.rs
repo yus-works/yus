@@ -7,23 +7,18 @@ use web_sys::{HtmlCanvasElement, PointerEvent};
 use crate::{
     components::{
         demo::to_clip_space,
-        demos::utils::{InstanceCtx, RenderPass, add_listener},
-    },
-    meshes::{
+        demos::utils::{add_listener, InstanceCtx, RenderPass},
+    }, meshes::{
         quad::{QUAD_INDICES, QUAD_VERTS},
         utils::stroke_polyline,
-    },
-    render::renderer::{
+    }, render::renderer::{
         camera_input::CameraInput,
         gpu::{
-            GpuState,
-            gpu_state::{FrameCtx, Projection, create_idx_buff_init, create_vert_buff_init},
-            surface_context::SurfaceContext,
-            vertex_ctx::VertexCtx,
+            gpu_state::{create_idx_buff_init, create_vert_buff_init, FrameCtx, Projection}, surface_context::SurfaceContext, vertex_ctx::VertexCtx, GpuState
         },
         instance::InstanceRaw,
         vertex::Vertex,
-    },
+    }
 };
 
 use super::main::{Animal, Joint};
@@ -116,11 +111,12 @@ fn build_joint_instances(joints: &[Joint]) -> Vec<InstanceRaw> {
 }
 
 pub(crate) fn make_spine_rpass(
-    points: Rc<RefCell<Vec<Vec2>>>,
     snake: Rc<RefCell<Animal>>,
 
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
+
+    enabled: RwSignal<bool>,
 ) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
     let pipeline = Rc::new(RefCell::new(None));
     let pipe_handle = pipeline.clone();
@@ -134,6 +130,10 @@ pub(crate) fn make_spine_rpass(
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
+            if !enabled.get_untracked() {
+                return;
+            }
+
             if pipe_handle.borrow().is_none() {
                 *pipe_handle.borrow_mut() = Some(make_joint_pipe(
                     st,
@@ -272,8 +272,11 @@ fn create_skin_vbuf(sc: &SurfaceContext, byte_cap: u64) -> wgpu::Buffer {
 pub(crate) fn make_skin_rpass(
     snake: Rc<RefCell<Animal>>,
     width: f32,
+
     vs_src: RwSignal<String>,
     fs_src: RwSignal<String>,
+
+    enabled: RwSignal<bool>,
 ) -> (RenderPass, Rc<RefCell<Option<wgpu::RenderPipeline>>>) {
     let pipeline = Rc::new(RefCell::new(None));
     let pipe_handle = pipeline.clone();
@@ -282,6 +285,10 @@ pub(crate) fn make_skin_rpass(
 
     let pass = Rc::new(RefCell::new(
         move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
+            if !enabled.get_untracked() {
+                return;
+            }
+
             st.populate_common_buffers(&Projection::FlatQuad, cam);
 
             // (re-)compile pipeline if needed
