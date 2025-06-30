@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::ElementChild;
 use leptos::prelude::GlobalAttributes;
 use leptos::prelude::RwSignal;
 use leptos::prelude::view;
+use leptos::prelude::Update;
 use leptos::prelude::{Effect, Get, Set};
 use leptos::{IntoView, component};
 
@@ -90,21 +93,25 @@ fn Experiments() -> impl IntoView {
 }
 
 #[derive(Clone)]
-pub struct PassFlags {
-    pub skin: RwSignal<bool>,
-    pub spine: RwSignal<bool>,
-    pub ctrl_pts: RwSignal<bool>,
-    pub skin_pts: RwSignal<bool>,
-}
+pub struct PassFlags(RwSignal<HashMap<String, RwSignal<bool>>>);
 
 impl PassFlags {
     pub fn new() -> Self {
-        Self {
-            skin: RwSignal::new(true),
-            spine: RwSignal::new(true),
-            ctrl_pts: RwSignal::new(false),
-            skin_pts: RwSignal::new(false),
-        }
+        Self(RwSignal::new(HashMap::new()))
+    }
+
+    pub fn init_pass(&self, label: &str, state: bool) -> RwSignal<bool> {
+        let sig = RwSignal::new(state);
+        self.0.update(|m| { m.insert(label.into(), sig); });
+        sig
+    }
+
+    pub fn iter(&self) -> Vec<(String, RwSignal<bool>)> {
+        self.0
+            .get() // reactive
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect()
     }
 }
 

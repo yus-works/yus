@@ -278,7 +278,7 @@ pub fn Animals(
         snake_rc.clone(),
         vs_src,
         fs_src,
-        pass_flags.spine,
+        pass_flags.init_pass("Spine pass", true),
     );
 
     let (skin_pass, skin_pipe) = make_skin_rpass(
@@ -286,7 +286,7 @@ pub fn Animals(
         0.015,
         vs_src,
         fs_src,
-        pass_flags.skin,
+        pass_flags.init_pass("Skin pass", true),
     );
 
     {
@@ -315,12 +315,12 @@ pub fn Animals(
             make_points_rpass(
                 points_rc.clone(),
                 [1., 0., 0., 0.],
-                pass_flags.ctrl_pts,
+                pass_flags.init_pass("Spine debug points pass", true),
             ),
             make_points_rpass(
                 snake_rc.clone().borrow().skin.clone(),
                 [0., 1., 0., 0.],
-                pass_flags.skin_pts
+                pass_flags.init_pass("Skin debug points pass", true),
             ),
         ],
         drag_head_to_cursor(points_rc.clone()),

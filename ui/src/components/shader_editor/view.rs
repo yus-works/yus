@@ -2,6 +2,7 @@ use crate::components::demos::utils::is_desktop;
 use crate::pages::classic::classic::PassFlags;
 use leptos::prelude::event_target_checked;
 use leptos::prelude::AnyView;
+use leptos::prelude::For;
 use leptos::prelude::IntoAny;
 use leptos::{
     IntoView, component,
@@ -9,7 +10,7 @@ use leptos::{
     html::Textarea,
     prelude::{
         ClassAttribute, ElementChild, Get, NodeRef, NodeRefAttribute, OnAttribute, PropAttribute,
-        RwSignal, Set, event_target_value
+        RwSignal, Set, event_target_value,
     },
     view,
 };
@@ -33,43 +34,27 @@ use super::utils::keydown;
 
 #[component]
 fn OptionsPanel(pass_flags: PassFlags) -> impl IntoView {
+    let items = move || pass_flags.iter();
+
     view! {
-        <label>
-            <input type="checkbox"
-                   prop:checked = pass_flags.skin
-                   on:change = move |ev| {
-                       let v = event_target_checked(&ev);
-                       pass_flags.skin.set(v);
-                   }/>
-            <span>Skin pass</span>
-        </label>
-
-        <label>
-            <input type="checkbox"
-                   prop:checked = pass_flags.spine
-                   on:change = move |ev| {
-                       pass_flags.spine.set(event_target_checked(&ev));
-                   }/>
-            <span>Spine pass</span>
-        </label>
-
-        <label>
-            <input type="checkbox"
-                   prop:checked = pass_flags.ctrl_pts
-                   on:change = move |ev| {
-                       pass_flags.ctrl_pts.set(event_target_checked(&ev));
-                   }/>
-            <span>Red points</span>
-        </label>
-
-        <label>
-            <input type="checkbox"
-                   prop:checked = pass_flags.skin_pts
-                   on:change = move |ev| {
-                       pass_flags.skin_pts.set(event_target_checked(&ev));
-                   }/>
-            <span>Green points</span>
-        </label>
+        <div class="flex flex-col gap-2">
+            <For
+                each=items
+                key=|pair: &(String, RwSignal<bool>)| pair.0.clone()
+                children=move |(label, sig): (String, RwSignal<bool>)| {
+                    view! {
+                        <label class="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                prop:checked=move || sig.get()
+                                on:change=move |ev| sig.set(event_target_checked(&ev))
+                            />
+                            <span class="text-text">{ label }</span>
+                        </label>
+                    }
+                }
+            />
+        </div>
     }
 }
 
@@ -226,7 +211,7 @@ pub fn ShaderEditor(
             <Show when=move || active_tab.get() == Tab::Ui>
                 {
                     let flags_handle = pass_flags.clone();
-                    view! { <OptionsPanel pass_flags=flags_handle /> }.into_any() 
+                    view! { <OptionsPanel pass_flags=flags_handle /> }.into_any()
                 }
             </Show>
 
