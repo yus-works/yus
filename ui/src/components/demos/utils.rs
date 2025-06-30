@@ -7,6 +7,7 @@ use wgpu::util::DeviceExt;
 use crate::meshes::quad::QUAD_INDICES;
 use crate::meshes::quad::QUAD_VERTS;
 use crate::render::renderer::camera_input::CameraInput;
+use crate::render::renderer::gpu::gpu_state::Projection;
 use crate::render::renderer::gpu::GpuState;
 use crate::render::renderer::gpu::gpu_state::FrameCtx;
 use crate::render::renderer::gpu::gpu_state::create_idx_buff_init;
@@ -457,20 +458,24 @@ fn init_color_bg(buf: wgpu::Buffer, bgl: &wgpu::BindGroupLayout, dev: &Device) -
     })
 }
 
-fn make_debug_pipe(st: &GpuState, color_bgl: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
+fn make_debug_points_pipe(st: &GpuState, color_bgl: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
     let pipe_layout =
         st.surface_context
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("debug pipeline layout"),
-                bind_group_layouts: &[&st.resource_context.common_bind_group.layout, color_bgl],
+                label: Some("debug points pipeline layout"),
+                bind_group_layouts: &[
+                    &st.resource_context.common_bind_group.layout,
+                    &st.resource_context.spatial_bind_group.layout,
+                    color_bgl,
+                ],
                 push_constant_ranges: &[],
             });
 
     st.surface_context
         .device
         .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("draw in points for debugging"),
+            label: Some("points for debugging"),
             layout: Some(&pipe_layout),
             cache: None,
             vertex: wgpu::VertexState {
@@ -550,10 +555,12 @@ pub(crate) fn make_points_rpass(
     let color_bg_handle: Rc<RefCell<Option<BindGroup>>> = Rc::new(RefCell::new(None));
 
     Rc::new(RefCell::new(
-        move |st: &mut GpuState, _cam: &CameraInput, ctx: &mut FrameCtx| {
+        move |st: &mut GpuState, cam: &CameraInput, ctx: &mut FrameCtx| {
             if !enabled.get_untracked() {
                 return;
             }
+
+            st.populate_common_buffers(&Projection::FlatQuad, cam);
 
             if pipe_handle.borrow().is_none() {
                 let buf = color_buffer_init(&st.surface_context.device, color);
@@ -562,7 +569,7 @@ pub(crate) fn make_points_rpass(
                 let color_bg = init_color_bg(buf, &cbgl, &st.surface_context.device);
 
                 *color_bg_handle.borrow_mut() = Some(color_bg);
-                *pipe_handle.borrow_mut() = Some(make_debug_pipe(st, &cbgl));
+                *pipe_handle.borrow_mut() = Some(make_debug_points_pipe(st, &cbgl));
             }
 
             if vbuf_handle.borrow().is_none() {
@@ -615,7 +622,8 @@ pub(crate) fn make_points_rpass(
             rp.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint16);
 
             rp.set_bind_group(0, &st.resource_context.common_bind_group.group, &[]);
-            rp.set_bind_group(1, color_bg_handle.borrow().as_ref().unwrap(), &[]);
+            rp.set_bind_group(1, &st.resource_context.spatial_bind_group.group, &[]);
+            rp.set_bind_group(2, color_bg_handle.borrow().as_ref().unwrap(), &[]);
 
             let idx_count = QUAD_INDICES.len() as u32;
             let inst_count = inst_handle.borrow().as_ref().unwrap().count;

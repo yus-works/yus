@@ -3,7 +3,7 @@ struct VSOut {
     @location(0) uv: vec2<f32>,
 };
 
-@group(1) @binding(0)
+@group(2) @binding(0)
 var<uniform> u_colour : vec4<f32>;
 
 @fragment

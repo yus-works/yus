@@ -180,7 +180,22 @@ impl GpuState {
 
     pub fn populate_common_buffers(&mut self, proj: &Projection, ci: &CameraInput) {
         let view_proj = match proj {
-            &Projection::FlatQuad => Mat4::IDENTITY,
+
+            Projection::FlatQuad => {
+                let aspect = self.resolution().0 / self.resolution().1;   // w / h
+
+                // portrait  (aspect < 1)  → squeeze Y
+                // landscape (aspect > 1)  → squeeze X
+                let scale = if aspect >= 1.0 {
+                    // widen X range so pixels match Y
+                    glam::Vec3::new(1.0 / aspect, 1.0, 1.0)
+                } else {
+                    // shrink Y range so pixels match X
+                    glam::Vec3::new(1.0, aspect, 1.0)
+                };
+
+                Mat4::from_scale(scale)
+            }
             &Projection::Custom(m) => m,
             &Projection::Ortho2D { width, height } => {
                 Mat4::orthographic_rh_gl(0.0, width, height, 0.0, -1.0, 1.0)

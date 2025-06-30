@@ -84,23 +84,30 @@ impl DemoTab for Demo {
 }
 
 pub fn to_clip_space(e: &PointerEvent, canvas: &HtmlCanvasElement) -> Vec2 {
-    // 1) upcast to HtmlElement → gain get_bounding_client_rect()
+    // canvas-relative position in **device pixels**
     let html: &HtmlElement = canvas.unchecked_ref();
     let rect = html.get_bounding_client_rect();
-
-    // 2) cursor position inside the canvas, in *CSS* pixels
-    let x_css = e.client_x() as f32 - rect.left() as f32;
-    let y_css = e.client_y() as f32 - rect.top() as f32;
-
-    // 3) handle Hi-DPI: convert CSS-px → device-px (canvas backing store)
-    let scale_x = canvas.width() as f32 / rect.width() as f32;
+    let scale_x = canvas.width()  as f32 / rect.width()  as f32;   // Hi-DPI
     let scale_y = canvas.height() as f32 / rect.height() as f32;
-    let x_px = x_css * scale_x;
-    let y_px = y_css * scale_y;
 
-    // 4) device-px → clip space (-1…+1), flip Y
-    let x_clip = 2.0 * (x_px / canvas.width() as f32) - 1.0;
-    let y_clip = -2.0 * (y_px / canvas.height() as f32) + 1.0;
+    let x_px = (e.client_x() as f32 - rect.left() as f32) * scale_x;
+    let y_px = (e.client_y() as f32 - rect.top()  as f32) * scale_y;
 
-    Vec2::new(x_clip, y_clip)
+    // device-pixels → NDC
+    let mut p = Vec2::new(
+        2.0 * (x_px / canvas.width()  as f32) - 1.0,
+       -2.0 * (y_px / canvas.height() as f32) + 1.0,
+    );
+
+    // reverse the squeeze that view_proj applies
+    let aspect = canvas.width() as f32 / canvas.height() as f32;
+    if aspect >= 1.0 {
+        // shader shrinks x, so expand it back for the mouse
+        p.x *= aspect;
+    } else {
+        // shader shrinks y, so expand it back for the mouse
+        p.y /= aspect;
+    }
+
+    p
 }

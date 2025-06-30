@@ -17,8 +17,8 @@ pub(crate) fn canvas(gpu_support: RwSignal<bool>, show_hint: RwSignal<bool>) -> 
 
           <canvas
             id=CANVAS_ID
-            width="800"
-            height="800"
+            width="864"
+            height="1024"
             class="w-full h-full object-cover touch-none select-none"
           ></canvas>
 
