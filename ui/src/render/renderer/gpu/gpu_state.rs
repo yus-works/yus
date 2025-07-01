@@ -31,14 +31,6 @@ pub struct GpuState {
     pub surface_context: SurfaceContext,
     pub resource_context: ResourceContext,
 
-    pub pipeline: wgpu::RenderPipeline,
-    pub vertex_buffer: wgpu::Buffer,
-    pub index_buffer: wgpu::Buffer,
-    pub num_indices: u32,
-    pub instance_buffer: wgpu::Buffer,
-    pub instance_count: u32,
-    pub instance_capacity: u32,
-
     pub start_ms: f64,
     pub prev_ms: f64, // since last frame
     pub frame_counter: u32,
@@ -139,14 +131,6 @@ impl FrameCtx {
 }
 
 impl GpuState {
-    pub fn set_vertices(&mut self, vertices: &[Vertex]) {
-        self.vertex_buffer = create_vert_buff_init(&self.surface_context, vertices);
-    }
-
-    pub fn set_indicies(&mut self, indices: &[u16]) {
-        self.index_buffer = create_idx_buff_init(&self.surface_context, indices)
-    }
-
     pub fn resolution(&self) -> (f32, f32) {
         (
             self.surface_context.config.width as f32,
