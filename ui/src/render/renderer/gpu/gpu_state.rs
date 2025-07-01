@@ -300,7 +300,7 @@ pub fn make_default_rpass(
             st.populate_common_buffers(&proj.borrow(), cam);
 
             let mut rp = ctx.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
+                label: Some("Default Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &ctx.color_view,
                     resolve_target: None,
