@@ -11,6 +11,23 @@ async fn main() -> std::io::Result<()> {
     let port: u16 = env::var("PORT").unwrap_or_else(|_| "3000".into()).parse().unwrap();
 
     // TODO: github setup here
+    {
+        const BANNER: &str = r#"
+            _                                     
+           (_)                                    
+  ___ _ __  _  ___   ___  ___ _ ____   _____ _ __ 
+ / _ \ '_ \| |/ __| / __|/ _ \ '__\ \ / / _ \ '__|
+|  __/ |_) | | (__  \__ \  __/ |   \ V /  __/ |   
+ \___| .__/|_|\___| |___/\___|_|    \_/ \___|_|   
+     | |                                          
+     |_|                                          
+    "#;
+
+        println!("\x1b[1;95m{BANNER}\x1b[0m");
+        println!(
+            "\x1b[1;34m🚀  OK EPIC SERVER GOING AT http://0.0.0.0:{port}  OH YEAH!\x1b[0m\n"
+        );
+    }
 
     HttpServer::new(move || {
         App::new()
