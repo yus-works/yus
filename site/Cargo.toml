@@ -11,4 +11,4 @@ actix-web     = "4.11"
 env_logger    = { workspace = true }
 log           = { workspace = true }
 anyhow        = { workspace = true }
-
+dotenv = "0.15.0"
