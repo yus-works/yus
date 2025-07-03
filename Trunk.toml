@@ -1,6 +1,7 @@
 [build]
-target = "index.html"
 manifest = "ui/Cargo.toml"
+target = "ui/index.html"
+dist = "site/dist"
 
-# [serve]
-# open = true
+[tools.tailwind]
+config = "ui/tailwind.config.js"

@@ -2,47 +2,31 @@
 resolver = "2"
 members   = ["site", "ui"]
 
+# TODO: cleanup unused libs
 [workspace.dependencies]
-leptos         = { version = "0.8.2", features = ["csr","ssr"] }
-leptos_router  = "0.8.2"
-leptos_meta    = "0.8.2"
-leptos_actix   = "0.8.2"
-actix-files    = "0.6.6"
-wgpu           = { version = "25.0", features = ["webgpu", "webgl"] }
-pollster       = "0.4"
-wasm-bindgen   = "0.2"
+leptos        = { version = "0.8.2", features = ["csr"] }
+leptos_router = "0.8.2"
+leptos_meta   = "0.8.2"
+leptos_actix  = "0.8.2"
+actix-files   = "0.6.6"
+wgpu          = { version = "25.0", features = ["webgpu", "webgl"] }
+pollster      = "0.4"
+wasm-bindgen  = "0.2"
 console_error_panic_hook = "0.1"
-env_logger     = "0.11"
-log            = "0.4"
-anyhow         = "1.0"
-glam           = "0.30.3"
-bytemuck       = "1.23"
-image          = "0.25.6"
+env_logger    = "0.11"
+log           = "0.4"
+anyhow        = "1.0"
+glam          = "0.30.3"
+bytemuck      = "1.23"
+image         = "0.25.6"
 wasm-bindgen-futures = "0.4.50"
-gloo-timers = { version = "0.3.0", features = ["futures"] }
-web-sys        = { version = "0.3.77", features = [
+gloo-timers   = { version = "0.3.0", features = ["futures"] }
+web-sys       = { version = "0.3.77", features = [
   "Window",
   "Navigator",
   "Performance",
   "MediaQueryList",
-    "HtmlElement",
-    "Element",
-    "DomRect",
+  "HtmlElement",
+  "Element",
+  "DomRect",
 ]}
-
-
-[[workspace.metadata.leptos]]
-name        = "yus"
-bin-package = "site"
-lib-package = "ui"
-
-# ---- only change these two lines ↓ -------------------------
-# Let cargo-leptos place the static site in target/site
-site-root   = "target/site"      # default is already target/site
-site-pkg-dir = "pkg"             # keep default; will be target/site/pkg
-# ------------------------------------------------------------
-
-# everything else can stay
-output-name  = "ui"
-lib-features = ["web"]
-bin-features = ["ssr"]

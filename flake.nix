@@ -24,6 +24,9 @@
           pkgs.lld
           pkgs.trunk
 
+          pkgs.openssl.dev
+          pkgs.pkg-config
+
           # ─────────────────────────────────────────────
           # Node.js + TailwindCSS/PostCSS
           # (so that `tailwindcss` CLI, `postcss` and `autoprefixer` are in $PATH)
