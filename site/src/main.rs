@@ -1,12 +1,6 @@
 use actix_files::Files;
-use actix_web::HttpRequest;
 use actix_web::{web, App, HttpServer, middleware::Logger};
-use std::{env::current_dir, path::PathBuf};
 use std::env;
-
-async fn spa() -> actix_files::NamedFile {
-    actix_files::NamedFile::open("../dist/index.html").unwrap()
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -18,8 +12,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .service(Files::new("/pkg", "./dist"))       // for .js, .css, .wasm
-            .service(Files::new("/assets", "./dist/assets")) // for fonts and images
+            .service(Files::new("/pkg", "./dist"))
+            .service(Files::new("/assets", "./dist/assets"))
             .default_service(web::get().to(|| async {
                 match actix_files::NamedFile::open_async("./dist/index.html").await {
                     Ok(file) => Ok(file),
