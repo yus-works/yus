@@ -134,73 +134,17 @@ pub fn default_pipeline(
     })
 }
 
-
-static CUBE_VS: &str = include_str!("./renderer/shaders/cube.vert.wgsl");
-static CUBE_FS: &str = include_str!("./renderer/shaders/cube.frag.wgsl");
-
 pub async fn init_wgpu(canvas: &HtmlCanvasElement, ) -> Result<GpuState> {
     let sc = SurfaceContext::new_async(&canvas).await?;
     let rc = ResourceContext::new_async(&sc).await;
 
-    let vs_module = VertexShader(
-        sc.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("Cube VS"),
-                source: wgpu::ShaderSource::Wgsl(CUBE_VS.into()),
-        })
-    );
-    let fs_module = FragmentShader(
-        sc.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("Cube FS"),
-                source: wgpu::ShaderSource::Wgsl(CUBE_FS.into()),
-        })
-    );
-
-    let pipeline = default_pipeline(&sc.device, &sc.config, &rc.pipeline_layout(&sc.device), &vs_module, &fs_module);
     let depth_view = create_depth_view(&sc.device, &sc.config);
 
-    let translations = [
-        Vec3::ZERO,
-    ];
-    let instances: Vec<_> = translations
-        .iter()
-        .map(|p| Mat4::from_translation(*p))
-        .map(InstanceRaw::from_mat4)
-        .collect();
-
-    // init_wgpu()
-    let initial_capacity = 256;
-    let instance_buffer  = create_instance_buff(&sc, initial_capacity);
-
-    sc.queue.write_buffer(
-        &instance_buffer,
-        0,
-        bytemuck::cast_slice(&instances),
-    );
-
-    let instance_capacity  = initial_capacity;
-
-    // TODO: allow instancing passthrouhg as well
-    let instance_buffer = create_instance_buff(&sc, instance_capacity);
-    let instance_count = instances.len() as u32;
-
     let t0 = web_sys::window().unwrap().performance().unwrap().now();
-
-    // render quad by default
-    let vertex_buffer = create_vert_buff_init(&sc, meshes::quad::QUAD_VERTS);
-    let index_buffer = create_idx_buff_init(&sc, meshes::quad::QUAD_INDICES);
-    let num_indices = meshes::quad::QUAD_INDICES.len() as u32;
 
     Ok(GpuState {
         surface_context: sc,
         resource_context: rc,
-        pipeline,
-
-        vertex_buffer,
-        index_buffer,
-        num_indices,
-        instance_buffer,
-        instance_count,
-        instance_capacity,
 
         start_ms: t0,
         prev_ms: t0,
