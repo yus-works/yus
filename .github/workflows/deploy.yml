@@ -6,14 +6,70 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
     steps:
+    # 0. check-out code
     - uses: actions/checkout@v4
+
+    # 1. speed up Cargo outside Docker ?
+    - name: Cache Cargo registry & git
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          cargo-${{ runner.os }}-
+
+    # 2. set up Fly CLI
     - uses: superfly/flyctl-actions/setup-flyctl@v1
 
-    - name: Update PAT if changed
-      run: flyctl secrets set --stage PROJECTS_PAT="${{ secrets.PROJECTS_PAT }}" -a yus
+    # 3. authenticate docker client to Fly registry
+    - name: Login to Fly registry
+      run: flyctl auth docker # just a thin wrapper for `docker login`
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }} # needed here too
 
-    - name: Deploy
-      run: flyctl deploy -a yus
+    # 4. enable Buildx
+    - uses: docker/setup-buildx-action@v3
+      with:
+        install: true # puts `docker buildx` on PATH
+
+    # 5. persist layer cache between runs
+    - name: Docker layer cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: buildx-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          buildx-${{ runner.os }}-
+
+    # 6. build AND push
+    - name: Build & push image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: registry.fly.io/yus:${{ github.sha }}
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+    # 7. move the refreshed cache into place
+    - run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+    # 8. set/update any secrets after the build
+    - name: Update PAT if changed
+      run: flyctl secrets set PROJECTS_PAT="${{ secrets.PROJECTS_PAT }}" -a yus
+
+    # 9. deploy the image
+    - name: Deploy image
+      run: flyctl deploy --image registry.fly.io/yus:${{ github.sha }} -a yus
+
