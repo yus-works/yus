@@ -3,6 +3,8 @@ use actix_web::{web, App, HttpServer, middleware::Logger};
 use std::env;
 use dotenvy::dotenv;
 
+pub mod api;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
