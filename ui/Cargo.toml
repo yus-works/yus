@@ -27,7 +27,8 @@ web-sys                      = { workspace = true , features = [
     "DomRect",
 ], optional = true }
 leptos-use = "0.16.2"
-
+gloo-net = "0.6.0"
+serde.workspace = true
 
 [features]
 web = [

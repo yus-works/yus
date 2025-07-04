@@ -4576,6 +4576,7 @@ dependencies = [
  "bytemuck",
  "console_error_panic_hook",
  "glam",
+ "gloo-net",
  "gloo-timers",
  "image",
  "leptos",
