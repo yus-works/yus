@@ -151,7 +151,7 @@ fn ShaderLab() -> impl IntoView {
                 lg:gap-y-0
                 lg:gap-x-6
             ">
-                <ShaderEditor vs_src fs_src pass_flags=pass_flags.clone() />
+                <ShaderEditor vs_src fs_src pass_flags=pass_flags.clone() selected_demo />
 
             // TODO: make demo's cover full width and have the editor be a tab you can switch to
             // instead of one next to the other as the demo window on mobile is too small

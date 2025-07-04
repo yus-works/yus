@@ -1,9 +1,11 @@
+use crate::components::demo::Demo;
 use crate::components::demos::utils::is_desktop;
 use crate::pages::classic::classic::PassFlags;
-use leptos::prelude::event_target_checked;
 use leptos::prelude::AnyView;
 use leptos::prelude::For;
 use leptos::prelude::IntoAny;
+use leptos::prelude::Memo;
+use leptos::prelude::event_target_checked;
 use leptos::{
     IntoView, component,
     control_flow::Show,
@@ -59,9 +61,9 @@ fn OptionsPanel(pass_flags: PassFlags) -> impl IntoView {
 }
 
 #[component]
-pub fn TabBar(active_tab: RwSignal<Tab>) -> impl IntoView {
+pub fn TabBar(active_tab: RwSignal<Tab>, ui_enabled: Memo<bool>) -> impl IntoView {
     // helper returns an AnyView, so its concrete type stays small
-    let mk_btn = |label: &'static str, tab: Tab| -> AnyView {
+    let mk_btn = move |label: &'static str, tab: Tab| -> AnyView {
         let active_tab = active_tab.clone();
 
         let on_click: Handler<web_sys::MouseEvent> = Box::new(move |_| active_tab.set(tab));
@@ -88,7 +90,15 @@ pub fn TabBar(active_tab: RwSignal<Tab>) -> impl IntoView {
         <div class="flex space-x-1">
             { mk_btn("VS", Tab::Vs) }
             { mk_btn("FS", Tab::Fs) }
-            { mk_btn("UI", Tab::Ui) }
+            {
+                move || {
+                    if ui_enabled.get() {
+                        mk_btn("UI", Tab::Ui)
+                    } else {
+                        view!{}.into_any()
+                    }
+                }
+            }
         </div>
     }
 }
@@ -149,10 +159,14 @@ pub fn ShaderEditor(
     fs_src: RwSignal<String>,
 
     pass_flags: PassFlags,
+    selected_demo: RwSignal<Demo>,
 ) -> impl IntoView {
     let vim_enabled = is_desktop();
 
     let active_tab = RwSignal::new(Tab::Vs);
+
+    let ui_enabled = Memo::new(move |_| selected_demo.get() == Demo::Animals);
+
     let textarea_ref = NodeRef::<Textarea>::new();
 
     let focus_textarea = move |_| {
@@ -177,7 +191,7 @@ pub fn ShaderEditor(
 
     view! {
         <div class="w-full h-[40rem] flex flex-col" on:click=focus_textarea>
-            <TabBar active_tab />
+            <TabBar active_tab ui_enabled />
 
             <Show when=move || active_tab.get() != Tab::Ui>
                 {   // these closures must be Fn, so build fresh handlers every call
@@ -208,7 +222,9 @@ pub fn ShaderEditor(
                 }
             </Show>
 
-            <Show when=move || active_tab.get() == Tab::Ui>
+            <Show
+                when=move || (active_tab.get() == Tab::Ui) && (ui_enabled.get())
+            >
                 {
                     let flags_handle = pass_flags.clone();
                     view! { <OptionsPanel pass_flags=flags_handle /> }.into_any()
