@@ -1,5 +1,6 @@
 use actix_files::{Files, NamedFile};
 use actix_web::{web, App, HttpServer, middleware::Logger};
+use api::projects::projects;
 use std::env;
 use dotenvy::dotenv;
 
@@ -37,6 +38,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(projects_pat.clone()))   // inject into handlers
             .service(Files::new("/pkg", "./dist"))
             .service(Files::new("/assets", "./dist/assets"))
+            .service(projects)
             .service(
                 Files::new("/", "./dist")
                     .index_file("index.html")

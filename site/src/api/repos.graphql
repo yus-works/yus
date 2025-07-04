@@ -1,0 +1,57 @@
+# ─────────────── Portfolio.gql ───────────────
+query Portfolio($login: String!) {
+  repositoryOwner(login: $login) {
+    __typename              # lets you see whether it was User or Organization
+
+    # user branch (needs ownerAffiliations)
+    ... on User {
+      repos: repositories(                    # ← alias so the JSON shape is the same
+        first: 100
+        isFork: false
+        privacy: PUBLIC
+        ownerAffiliations: OWNER
+        orderBy: { field: PUSHED_AT, direction: DESC }
+      ) {
+        nodes { ...RepoFields }
+      }
+    }
+
+    # organisation branch (same fields, but ownerAffiliations not allowed)
+    ... on Organization {
+      repos: repositories(
+        first: 100
+        isFork: false
+        privacy: PUBLIC
+        orderBy: { field: PUSHED_AT, direction: DESC }
+      ) {
+        nodes { ...RepoFields }
+      }
+    }
+  }
+}
+
+# ─────────────── reusable fragment ───────────────
+fragment RepoFields on Repository {
+  name
+  description
+  pushedAt                               # drives “live / wip …”
+
+  repositoryTopics(first: 20) {          # free-form tags
+    nodes { topic { name } }
+  }
+
+  languages(                             # five biggest languages
+    first: 5
+    orderBy: { field: SIZE, direction: DESC }
+  ) {
+    edges { size node { name } }
+  }
+
+  refs(                                  # newest Git tag
+    refPrefix: "refs/tags/"
+    first: 1
+    orderBy: { field: TAG_COMMIT_DATE, direction: DESC }
+  ) {
+    nodes { name }
+  }
+}
