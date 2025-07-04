@@ -5,18 +5,12 @@ use anyhow::anyhow;
 use anyhow::Result;
 
 use web_sys::HtmlCanvasElement;
-use crate::meshes;
 use crate::render::renderer::gpu::utils::*;
 use crate::render::renderer::instance::InstanceRaw;
 use crate::render::renderer::vertex::Vertex;
-use glam::Mat4;
-use glam::Vec3;
 use crate::render::renderer::vertex;
 use web_sys;
 
-use super::renderer::gpu::gpu_state::create_idx_buff_init;
-use super::renderer::gpu::gpu_state::create_instance_buff;
-use super::renderer::gpu::gpu_state::create_vert_buff_init;
 use super::renderer::gpu::gpu_state::GpuState;
 use super::renderer::gpu::resource_context::ResourceContext;
 use super::renderer::gpu::surface_context::SurfaceContext;
