@@ -1,12 +1,11 @@
 use std::collections::HashMap;
-
 use leptos::prelude::ClassAttribute;
+use leptos::prelude::{Children, Effect, Get, Set};
 use leptos::prelude::ElementChild;
 use leptos::prelude::GlobalAttributes;
 use leptos::prelude::RwSignal;
 use leptos::prelude::view;
 use leptos::prelude::Update;
-use leptos::prelude::{Effect, Get, Set};
 use leptos::{IntoView, component};
 
 use crate::components::demo::{Demo, DemoTab};
@@ -29,53 +28,97 @@ fn Hero() -> impl IntoView {
 }
 
 #[component]
-fn ProjectCards() -> impl IntoView {
-    // TODO: make little bubbles on each project card that say stuff
-    // like "Done" "teamwork" "Live" "WIP" and so on
+pub fn ProjectCard(
+    title: &'static str,
+    desc: &'static str,
+    image: &'static str,
+    #[prop(optional)]
+    extra: Option<&'static str>,
+    children: Children,
+) -> impl IntoView {
     view! {
-        <section id="projects" class="py-16 grid sm:grid-cols-3 gap-8">
-            <a href="https://github.com/yus-works/velari" target="_blank" rel="noopener noreferrer">
-                <article class="bg-neutral-light rounded-xl overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
-                    <img
-                      src="/img/rocket.jpg"
-                      alt="Work in Progress 🤔"
-                      class="h-40 w-full object-cover"
-                    />
-                    <div class="p-4">
-                        <h3 class="font-semibold text-lg mb-1">Velari</h3>
-                        <p class="text-sm text-slate-700">Minecraft Space Travel Mod<br/>GPL-3.0</p>
-                    </div>
-                </article>
-            </a>
-            <a href="https://github.com/yus-works/metal-stars" target="_blank" rel="noopener noreferrer">
-                <article class="bg-neutral-light rounded-xl overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
-                    <img
-                      src="/img/rocket.jpg"
-                      alt="Work in Progress 🤔"
-                      class="h-40 w-full object-cover"
-                    />
-                    <div class="p-4">
-                        <h3 class="font-semibold text-lg mb-1">Metal Stars</h3>
-                        <p class="text-sm text-slate-700">AR Satellite Visualizer<br/>GPL-3.0</p>
-                    </div>
-                </article>
-            </a>
-            <a href="https://github.com/yus-works/yus" target="_blank" rel="noopener noreferrer">
-                <article class="bg-neutral-light rounded-xl overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
-                    <img
-                      src="/img/rocket.jpg"
-                      alt="Work in Progress 🤔"
-                      class="h-40 w-full object-cover"
-                    />
-                    <div class="p-4">
-                        <h3 class="font-semibold text-lg mb-1">Yus Experiments</h3>
-                        <p class="text-sm text-slate-700">Experiments that test my abilities</p>
-                    </div>
-                </article>
-            </a>
+        <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
+            { children() }
+            <img src=image alt=title class="h-40 w-full object-cover"/>
+            <div class="p-4">
+                <h3 class="font-semibold text-lg mb-1">{ title }</h3>
+                <p class="text-sm text-slate-700">
+                    { desc }
+                    { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
+                </p>
+            </div>
+        </article>
+    }
+}
+
+#[component]
+pub fn ProjectCards() -> impl IntoView {
+    view! {
+        <section id="projects" class="py-16 flex gap-8 overflow-x-auto snap-x snap-mandatory scrollbar-hidden">
+            <ProjectCard
+                title="yus.rs"
+                desc="Portfolio/Personal Brand"
+                image="/img/rocket.jpg"
+            >
+                <span class="absolute top-2 left-2 bg-green-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Live"</span>
+            </ProjectCard>
+            <ProjectCard
+                title="Velari"
+                desc="Minecraft Space Travel Mod"
+                image="/img/rocket.jpg"
+                extra="GPL-3.0"
+            >
+                <span class="absolute top-2 left-2 bg-green-600/90 text-text text-xs px-2 py-0.5 rounded-full">"WIP"</span>
+            </ProjectCard>
+
+            <ProjectCard
+                title="Metal Stars"
+                desc="AR Satellite Visualizer"
+                image="/img/rocket.jpg"
+                extra="GPL-3.0"
+            >
+                <span class="absolute top-2 left-2 bg-green-600/90 text-text text-xs px-2 py-0.5 rounded-full">"WIP"</span>
+            </ProjectCard>
+
+            <ProjectCard
+                title="Yus Experiments"
+                desc="Experiments that test my abilities"
+                image="/img/rocket.jpg"
+            >
+                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
+            </ProjectCard>
+
+            <ProjectCard
+                title="HeliOS"
+                desc="Experiments that test my abilities"
+                image="/img/rocket.jpg"
+            >
+                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
+            </ProjectCard>
+
+            <ProjectCard
+                title="Nebula"
+                desc="Experiments that test my abilities"
+                image="/img/rocket.jpg"
+            >
+                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
+            </ProjectCard>
+
+            <ProjectCard
+                title="Plantorio"
+                desc="Experiments that test my abilities"
+                image="/img/rocket.jpg"
+            >
+                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
+            </ProjectCard>
         </section>
     }
 }
+
+// Tailwind helper: hide scrollbars without disabling scrolling.
+// Add this to your CSS (or Tailwind plugin):
+// .scrollbar-hidden { scrollbar-width: none; }
+// .scrollbar-hidden::-webkit-scrollbar { display: none; }
 
 #[component]
 fn Experiments() -> impl IntoView {
@@ -166,7 +209,7 @@ fn ShaderLab() -> impl IntoView {
 }
 
 #[component]
-pub fn classic_main() -> impl IntoView {
+pub fn ClassicMain() -> impl IntoView {
     view! {
       <main class="max-w-6xl mx-auto px-6">
           <Hero/>
