@@ -4,7 +4,7 @@ members   = ["site", "ui"]
 
 # TODO: cleanup unused libs
 [workspace.dependencies]
-leptos        = { version = "0.8.2", features = ["csr"] }
+leptos        = { version = "0.8.2" }
 leptos_router = "0.8.2"
 leptos_meta   = "0.8.2"
 leptos_actix  = "0.8.2"
