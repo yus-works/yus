@@ -1,12 +1,16 @@
-use std::collections::HashMap;
 use leptos::prelude::ClassAttribute;
-use leptos::prelude::{Children, Effect, Get, Set};
 use leptos::prelude::ElementChild;
+use leptos::prelude::For;
 use leptos::prelude::GlobalAttributes;
+use leptos::prelude::IntoAny;
 use leptos::prelude::RwSignal;
-use leptos::prelude::view;
+use leptos::prelude::Suspense;
 use leptos::prelude::Update;
+use leptos::prelude::view;
+use leptos::prelude::{Children, Effect, Get, Set};
+use leptos::server::LocalResource;
 use leptos::{IntoView, component};
+use std::collections::HashMap;
 
 use crate::components::demo::{Demo, DemoTab};
 use crate::components::shader_editor::ShaderEditor;
@@ -29,20 +33,19 @@ fn Hero() -> impl IntoView {
 
 #[component]
 pub fn ProjectCard(
-    title: &'static str,
-    desc: &'static str,
-    image: &'static str,
-    #[prop(optional)]
-    extra: Option<&'static str>,
+    title: String,
+    desc: String,
+    image: String,
+    #[prop(optional)] extra: Option<&'static str>,
     children: Children,
 ) -> impl IntoView {
     view! {
         <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
             { children() }
-            <img src=image alt=title class="h-40 w-full object-cover"/>
+            <img src=image alt="No image here yet :o" class="h-40 w-full object-cover"/>
             <div class="p-4">
-                <h3 class="font-semibold text-lg mb-1">{ title }</h3>
-                <p class="text-sm text-slate-700">
+                <h3 class="font-semibold text-lg mb-1">{ title.clone() }</h3>
+                <p class="text-sm text-text">
                     { desc }
                     { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
                 </p>
@@ -51,74 +54,84 @@ pub fn ProjectCard(
     }
 }
 
+use gloo_net::http::Request;
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct ProjectDto {
+    name: String,
+    description: Option<String>,
+    version: Option<String>,
+    status: String,
+    labels: Vec<String>,           // from repo topics
+    languages: Vec<(String, f32)>, // (lang, pct)
+}
+
 #[component]
 pub fn ProjectCards() -> impl IntoView {
+    let projects = LocalResource::new(|| async {
+        Request::get("/api/projects")
+            .send()
+            .await
+            .map_err(|e| e.to_string())?
+            .json::<Vec<ProjectDto>>()
+            .await
+            .map_err(|e| e.to_string())
+    });
+
+    let card = move |p: ProjectDto| {
+        let badge_bg = match p.status.as_str() {
+            "live" => "bg-green-600/90",
+            "wip" => "bg-orange-600/90",
+            "paused" => "bg-yellow-600/90",
+            _ => "bg-slate-600/90",
+        };
+
+        view! {
+            <ProjectCard
+                title=p.name.clone()
+                desc=p.description.clone().unwrap_or_default()
+                image=String::from("/img/rocket.jpg")
+            >
+                <span
+                    class=format!(
+                        "absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full \
+                         {} text-text",
+                        badge_bg
+                    )
+                >
+                    {move || p.status.clone()}
+                </span>
+            </ProjectCard>
+        }
+        .into_any()
+    };
+
     view! {
-        <section id="projects" class="py-16 flex gap-8 overflow-x-auto snap-x snap-mandatory scrollbar-hidden">
-            <ProjectCard
-                title="yus.rs"
-                desc="Portfolio/Personal Brand"
-                image="/img/rocket.jpg"
-            >
-                <span class="absolute top-2 left-2 bg-green-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Live"</span>
-            </ProjectCard>
-            <ProjectCard
-                title="Velari"
-                desc="Minecraft Space Travel Mod"
-                image="/img/rocket.jpg"
-                extra="GPL-3.0"
-            >
-                <span class="absolute top-2 left-2 bg-green-600/90 text-text text-xs px-2 py-0.5 rounded-full">"WIP"</span>
-            </ProjectCard>
+        <section
+            id="projects"
+            class="py-16 flex gap-8 overflow-x-auto snap-x snap-mandatory">
 
-            <ProjectCard
-                title="Metal Stars"
-                desc="AR Satellite Visualizer"
-                image="/img/rocket.jpg"
-                extra="GPL-3.0"
-            >
-                <span class="absolute top-2 left-2 bg-green-600/90 text-text text-xs px-2 py-0.5 rounded-full">"WIP"</span>
-            </ProjectCard>
+            <Suspense fallback=|| view! { <p class="text-text">"loading…"</p> } >
+                {move || match projects.get() {
+                    Some(Ok(list)) => view! {
+                        <For
+                            each=move || list.clone()
+                            key =|p: &ProjectDto| p.name.clone()
+                            children=move |p| { card(p) }
+                        />
+                    }.into_any(),
 
-            <ProjectCard
-                title="Yus Experiments"
-                desc="Experiments that test my abilities"
-                image="/img/rocket.jpg"
-            >
-                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
-            </ProjectCard>
+                    Some(Err(e)) => view! {
+                        <p class="text-red-500">"error: " {e}</p>
+                    }.into_any(),
 
-            <ProjectCard
-                title="HeliOS"
-                desc="Experiments that test my abilities"
-                image="/img/rocket.jpg"
-            >
-                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
-            </ProjectCard>
+                    None => ().into_any(),
+                }}
 
-            <ProjectCard
-                title="Nebula"
-                desc="Experiments that test my abilities"
-                image="/img/rocket.jpg"
-            >
-                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
-            </ProjectCard>
-
-            <ProjectCard
-                title="Plantorio"
-                desc="Experiments that test my abilities"
-                image="/img/rocket.jpg"
-            >
-                <span class="absolute top-2 left-2 bg-slate-600/90 text-text text-xs px-2 py-0.5 rounded-full">"Experiments"</span>
-            </ProjectCard>
+            </Suspense>
         </section>
     }
 }
-
-// Tailwind helper: hide scrollbars without disabling scrolling.
-// Add this to your CSS (or Tailwind plugin):
-// .scrollbar-hidden { scrollbar-width: none; }
-// .scrollbar-hidden::-webkit-scrollbar { display: none; }
 
 #[component]
 fn Experiments() -> impl IntoView {
@@ -145,7 +158,9 @@ impl PassFlags {
 
     pub fn init_pass(&self, label: &str, state: bool) -> RwSignal<bool> {
         let sig = RwSignal::new(state);
-        self.0.update(|m| { m.insert(label.into(), sig); });
+        self.0.update(|m| {
+            m.insert(label.into(), sig);
+        });
         sig
     }
 
