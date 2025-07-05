@@ -80,8 +80,8 @@ pub fn ProjectCards() -> impl IntoView {
 
     let card = move |p: ProjectDto| {
         let badge_bg = match p.status.as_str() {
-            "live" => "bg-green-600/90",
-            "wip" => "bg-orange-600/90",
+            "active" => "bg-green-600/90",
+            "ongoing" => "bg-orange-600/90",
             "paused" => "bg-yellow-600/90",
             _ => "bg-slate-600/90",
         };
