@@ -21,11 +21,15 @@ image                        = { workspace = true }
 wasm-bindgen-futures         = { workspace = true }
 gloo-timers                  = { workspace = true , features = ["futures"], optional = true }
 web-sys                      = { workspace = true , features = [ 
-  "Window", "Performance",
-    "HtmlElement",
-    "Element",
-    "DomRect",
+  "Window",
+  "Performance",
+  "HtmlElement",
+  "Element",
+  "DomRect",
+  "ScrollIntoViewOptions",
+  "ScrollLogicalPosition",
 ], optional = true }
+
 leptos-use = "0.16.2"
 gloo-net = "0.6.0"
 serde.workspace = true

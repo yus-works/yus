@@ -1,8 +1,15 @@
+use gloo_timers::callback::Timeout;
+use leptos::html;
+use leptos::leptos_dom::logging::console_log;
+use leptos::prelude::AriaAttributes;
 use leptos::prelude::ClassAttribute;
 use leptos::prelude::ElementChild;
 use leptos::prelude::For;
 use leptos::prelude::GlobalAttributes;
 use leptos::prelude::IntoAny;
+use leptos::prelude::NodeRef;
+use leptos::prelude::NodeRefAttribute;
+use leptos::prelude::OnAttribute;
 use leptos::prelude::RwSignal;
 use leptos::prelude::Suspense;
 use leptos::prelude::Update;
@@ -11,6 +18,11 @@ use leptos::prelude::{Children, Effect, Get, Set};
 use leptos::server::LocalResource;
 use leptos::{IntoView, component};
 use std::collections::HashMap;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::Closure;
+use web_sys::AddEventListenerOptions;
+use web_sys::Element;
+use web_sys::Event;
 
 use crate::components::demo::{Demo, DemoTab};
 use crate::components::shader_editor::ShaderEditor;
@@ -67,6 +79,37 @@ struct ProjectDto {
 }
 
 #[component]
+pub fn CarouselDots(selected: RwSignal<usize>, total: usize) -> impl IntoView {
+    view! {
+        <div class="flex justify-center gap-2 pt-4 select-none">
+            <For
+                each=move || 0..total
+                key=|i| i + 1
+                children=move |i| {
+                    let selected = selected.clone();
+                    view! {
+                        <button
+                            class=move || format!(
+                                "h-2 w-2 rounded-full transition-all \
+                                 duration-300 {}",
+                                if selected.get() == i {
+                                    "bg-primary/90 scale-125"
+                                } else {
+                                    "bg-gray-400/70 hover:bg-gray-500"
+                                }
+                            )
+                            // keep buttons keyboard-focusable
+                            aria-label=format!("Go to slide {}", i + 1)
+                            on:click=move |_| selected.set(i)
+                        />
+                    }
+                }
+            />
+        </div>
+    }
+}
+
+#[component]
 pub fn ProjectCards() -> impl IntoView {
     let projects = LocalResource::new(|| async {
         Request::get("/api/projects")
@@ -95,39 +138,109 @@ pub fn ProjectCards() -> impl IntoView {
                 <span
                     class=format!(
                         "absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full \
-                         {} text-text",
-                        badge_bg
-                    )
+                         {} text-text", badge_bg)
                 >
-                    {move || p.status.clone()}
+                    { move || p.status.clone() }
                 </span>
             </ProjectCard>
         }
         .into_any()
     };
 
+    let selected = RwSignal::new(0usize);
+    let lane_ref: NodeRef<html::Div> = NodeRef::new();
+
+    let autoscrolling = RwSignal::new(false);
+
+    Effect::new(move |_| {
+        let i = selected.get();
+        if let (Some(lane), Some(child)) = (
+            lane_ref.get(),
+            lane_ref.get().and_then(|l| l.children().item(i as u32)),
+        ) {
+            autoscrolling.set(true);
+
+            let opts = web_sys::ScrollIntoViewOptions::new();
+            opts.set_behavior(web_sys::ScrollBehavior::Smooth);
+            opts.set_block(web_sys::ScrollLogicalPosition::Nearest);
+            opts.set_inline(web_sys::ScrollLogicalPosition::Start);
+            child
+                .unchecked_into::<Element>()
+                .scroll_into_view_with_scroll_into_view_options(&opts);
+
+            {
+                let autoscrolling_flag = autoscrolling.clone();
+                let cb = Closure::<dyn FnMut(Event)>::wrap(Box::new(move |_| {
+                    autoscrolling_flag.set(false);
+                }));
+
+                let opts = AddEventListenerOptions::new();
+                opts.set_once(true); // auto-remove after first fire
+                opts.set_capture(true); // capture phase = fire sooner/always
+
+                if lane
+                    .add_event_listener_with_callback_and_add_event_listener_options(
+                        "scrollend",
+                        cb.as_ref().unchecked_ref(),
+                        &opts,
+                    )
+                    .is_ok()
+                {
+                    cb.forget();
+                } else {
+                    // fallback
+                    Timeout::new(400, move || autoscrolling.set(false)).forget();
+                }
+            }
+        }
+    });
+
+    let on_scroll = move |_| {
+        if autoscrolling.get() {
+            console_log("autoscrolling gating");
+            return;
+        }
+        console_log("autoscrolling not gating");
+        if let Some(lane) = lane_ref.get() {
+            let scroll_left = lane.scroll_left() as f32;
+            let card_w = 320.0;
+            let gap = 32.0;
+            let i = (scroll_left / (card_w + gap)).round() as usize;
+
+            if i != selected.get() {
+                selected.set(i);
+            }
+        }
+    };
+
     view! {
-        <section
-            id="projects"
-            class="py-16 flex gap-8 overflow-x-auto snap-x snap-mandatory">
+        <section id="projects" class="py-16">
+            <Suspense fallback=|| view!{ <p class="text-text">"loading…"</p> } >
+                { move || match projects.get() {
+                    Some(Ok(list)) => {
+                        let total = list.len();
+                        view! {
+                            <div
+                                node_ref=lane_ref
+                                class="flex gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                                on:scroll=on_scroll
+                            >
+                                <For
+                                    each = move || list.clone()
+                                    key = |p: &ProjectDto| p.name.clone()
+                                    children = move |p| { card(p) }
+                                />
+                            </div>
 
-            <Suspense fallback=|| view! { <p class="text-text">"loading…"</p> } >
-                {move || match projects.get() {
-                    Some(Ok(list)) => view! {
-                        <For
-                            each=move || list.clone()
-                            key =|p: &ProjectDto| p.name.clone()
-                            children=move |p| { card(p) }
-                        />
+                            <div class="mt-8">
+                                <CarouselDots selected total />
+                            </div>
+                        }
                     }.into_any(),
 
-                    Some(Err(e)) => view! {
-                        <p class="text-red-500">"error: " {e}</p>
-                    }.into_any(),
-
+                    Some(Err(e)) => view!{ <p class="text-red-500">"error: " {e}</p> }.into_any(),
                     None => ().into_any(),
                 }}
-
             </Suspense>
         </section>
     }
