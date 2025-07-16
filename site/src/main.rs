@@ -13,7 +13,6 @@ async fn main() -> std::io::Result<()> {
     let projects_pat = env::var("PROJECTS_PAT").expect("PROJECTS_PAT missing");
     let port: u16 = env::var("PORT").unwrap_or_else(|_| "3000".into()).parse().unwrap();
 
-    // TODO: github setup here
     {
         const BANNER: &str = r#"
             _                                     
