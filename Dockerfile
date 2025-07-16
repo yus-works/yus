@@ -1,9 +1,7 @@
 # 0 – common base with toolchain
 FROM rust:1.85-slim AS base
 RUN apt-get update \
- && apt-get install -y pkg-config libssl-dev ca-certificates curl \
- && curl -L https://github.com/mozilla/sccache/releases/latest/download/sccache-x86_64-unknown-linux-musl.tar.gz \
-    | tar -xz -C /usr/local/bin --strip-components=1 \
+ && apt-get install -y pkg-config libssl-dev ca-certificates curl sccache \
  && rm -rf /var/lib/apt/lists/*
 
 # global Cargo/registry cache for all later stages
