@@ -69,7 +69,6 @@ RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=lo
     cargo chef cook \
       --recipe-path recipe.json \
       --package site \
-      --features ssr \
       --release
 
 # 3 – build the actual project
