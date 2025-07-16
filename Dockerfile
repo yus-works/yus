@@ -26,9 +26,11 @@ FROM base AS planner-ui
 WORKDIR /app
 COPY Cargo.toml Cargo.lock Trunk.toml ./
 COPY ui/Cargo.toml ui/
+
+WORKDIR ui
+
 RUN cargo chef prepare \
       --recipe-path recipe-ui.json \
-      --manifest-path ui/Cargo.toml \
       --target wasm32-unknown-unknown \
       --features web
 
@@ -37,6 +39,9 @@ FROM base AS planner-site
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY site/Cargo.toml site/
+
+WORKDIR site
+
 RUN cargo chef prepare \
       --recipe-path recipe-site.json \
       --package site \
