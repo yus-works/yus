@@ -77,19 +77,6 @@ pub fn FragIntro(vs_src: RwSignal<String>, fs_src: RwSignal<String>) -> impl Int
             class="w-full h-full object-cover touch-none select-none"
           ></canvas>
 
-          <Show when=move || show_hint.get()>
-              <div id="hint"
-                   class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center
-                          bg-white/70 backdrop-blur-sm text-surface text-sm gap-2
-                          transition-opacity duration-500
-                          group-hover:opacity-0">
-                ""
-                <p>"Click & drag to rotate camera ✋"</p>
-                <p>"Scroll or pinch to zoom 🖱️/🤏"</p>
-                <strong>"Click to hide this hint"</strong>
-              </div>
-          </Show>
-
           </Show>
         </div>
     }

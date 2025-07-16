@@ -29,8 +29,7 @@ pub(crate) fn canvas(gpu_support: RwSignal<bool>, show_hint: RwSignal<bool>) -> 
                           transition-opacity duration-500
                           group-hover:opacity-0">
                 ""
-                <p>"Click & drag to rotate camera ✋"</p>
-                <p>"Scroll or pinch to zoom 🖱️/🤏"</p>
+                <p>"Click & drag to move the animal ✋"</p>
                 <strong>"Click to hide this hint"</strong>
               </div>
           </Show>
