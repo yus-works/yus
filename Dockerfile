@@ -47,9 +47,9 @@ ARG CACHE_REGISTRY=registry
 ARG CACHE_GIT=git-db
 ARG CACHE_SCCACHE=sccache
 
-RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
-    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
-    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=locked \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
     cargo chef cook --recipe-path recipe.json \
     --target wasm32-unknown-unknown \
     --manifest-path ui/Cargo.toml
@@ -63,9 +63,9 @@ ARG CACHE_REGISTRY=registry
 ARG CACHE_GIT=git-db
 ARG CACHE_SCCACHE=sccache
 
-RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
-    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
-    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=locked \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
     cargo chef cook --recipe-path recipe.json \
     --package site
 
