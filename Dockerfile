@@ -38,22 +38,44 @@ RUN mkdir -p ui/src site/src \
 RUN cargo chef prepare --recipe-path recipe.json
 
 
-########## 2 – cook *both* dependency sets in one go
-FROM base AS cacher
+# 2a – cache WASM deps only
+FROM base AS cacher-ui
 WORKDIR /app
 COPY --from=planner /app/recipe.json .
+
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
 RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
     --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
     --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
-    cargo chef cook --recipe-path recipe.json --profile release --target wasm32-unknown-unknown \
- && cargo chef cook --recipe-path recipe.json --profile release
+    cargo chef cook --recipe-path recipe.json \
+    --target wasm32-unknown-unknown \
+    --manifest-path ui/Cargo.toml
+
+# 2b – cache native deps
+FROM base AS cacher-site
+WORKDIR /app
+COPY --from=planner /app/recipe.json .
+
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+    cargo chef cook --recipe-path recipe.json \
+    --package site
 
 # 3 – build the actual project
 FROM base AS builder
 WORKDIR /app
 
 # re-use both dependency layers
-COPY --from=cacher   /app/target /app/target
+COPY --from=cacher-ui   /app/target /app/target
+COPY --from=cacher-site /app/target /app/target
 COPY . .
 
 ARG CACHE_REGISTRY=registry
