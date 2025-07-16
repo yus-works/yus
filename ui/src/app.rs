@@ -12,7 +12,7 @@ pub fn App() -> impl IntoView {
 
     view! {
       <Router>
-        <header class="sticky top-0 bg-surface/85 backdrop-blur">
+        <header class="sticky z-50 top-0 bg-surface/85 backdrop-blur">
           <div class="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
             <a href="/" class="text-2xl font-extrabold text-primary">YUS</a>
             <nav class="hidden md:flex gap-8 text-text">
