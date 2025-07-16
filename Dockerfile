@@ -48,7 +48,7 @@ RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=lo
     --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
     --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
     cargo chef cook \
-      --recipe-path recipe-ui.json \
+      --recipe-path recipe.json \
       --target wasm32-unknown-unknown \
       --manifest-path ui/Cargo.toml \
       --features web \
@@ -67,7 +67,7 @@ RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=lo
     --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
     --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
     cargo chef cook \
-      --recipe-path recipe-site.json \
+      --recipe-path recipe.json \
       --package site \
       --features ssr \
       --release
