@@ -22,30 +22,12 @@ RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
  && rustup target add wasm32-unknown-unknown
 
 # 1a — ui dep graph
-FROM base AS planner-ui
+FROM base AS planner
 WORKDIR /app
 COPY Cargo.toml Cargo.lock Trunk.toml ./
 COPY ui/Cargo.toml ui/
-
-WORKDIR ui
-
-RUN cargo chef prepare \
-      --recipe-path recipe-ui.json \
-      --target wasm32-unknown-unknown \
-      --features web
-
-# 1b — site dep graph
-FROM base AS planner-site
-WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
 COPY site/Cargo.toml site/
-
-WORKDIR site
-
-RUN cargo chef prepare \
-      --recipe-path recipe-site.json \
-      --package site \
-      --features ssr
+RUN cargo chef prepare --recipe-path recipe.json
 
 # 2a – cache WASM deps
 FROM base AS cacher-ui
