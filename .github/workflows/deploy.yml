@@ -39,37 +39,26 @@ jobs:
     - uses: docker/setup-buildx-action@v3
       with:
         install: true # puts `docker buildx` on PATH
+        driver-opts: |
+            image=moby/buildkit:latest
 
-    # 5. persist layer cache between runs
-    - name: Docker layer cache
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: buildx-${{ runner.os }}-${{ github.sha }}
-        restore-keys: |
-          buildx-${{ runner.os }}-
-
-    # 6. build AND push
+    # 5. build AND push, using GHA cache
     - name: Build & push image
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: Dockerfile
         push: true
         tags: registry.fly.io/yus:${{ github.sha }}
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
-    # 7. move the refreshed cache into place
-    - run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-    # 8. set/update any secrets after the build
+    # 6. set/update any secrets after the build
     - name: Update PAT if changed
       run: flyctl secrets set PROJECTS_PAT="${{ secrets.PROJECTS_PAT }}" -a yus
 
-    # 9. deploy the image
+    # 7. deploy the image
     - name: Deploy image
       run: flyctl deploy --image registry.fly.io/yus:${{ github.sha }} -a yus
 
