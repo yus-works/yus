@@ -21,27 +21,31 @@ RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
  && cargo install trunk --locked \
  && rustup target add wasm32-unknown-unknown
 
-# 1 – dependency graph
-FROM base AS planner
+# 1a — ui dep graph
+FROM base AS planner-ui
 WORKDIR /app
-
-# copy only manifests
 COPY Cargo.toml Cargo.lock Trunk.toml ./
-COPY ui/Cargo.toml       ./ui/
-COPY site/Cargo.toml     ./site/
+COPY ui/Cargo.toml ui/
+RUN cargo chef prepare \
+      --recipe-path recipe-ui.json \
+      --manifest-path ui/Cargo.toml \
+      --target wasm32-unknown-unknown \
+      --features web
 
-# dummy targets so `cargo metadata` is happy.
-RUN mkdir -p ui/src site/src \
- && printf 'fn main() {}\n' > site/src/main.rs \
- && printf '// stub lib\n'   > ui/src/lib.rs
+# 1b — site dep graph
+FROM base AS planner-site
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY site/Cargo.toml site/
+RUN cargo chef prepare \
+      --recipe-path recipe-site.json \
+      --package site \
+      --features ssr
 
-RUN cargo chef prepare --recipe-path recipe.json
-
-
-# 2a – cache WASM deps only
+# 2a – cache WASM deps
 FROM base AS cacher-ui
 WORKDIR /app
-COPY --from=planner /app/recipe.json .
+COPY --from=planner-ui /app/recipe-ui.json .
 
 ARG CACHE_REGISTRY=registry
 ARG CACHE_GIT=git-db
@@ -50,14 +54,17 @@ ARG CACHE_SCCACHE=sccache
 RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=locked \
     --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
     --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
-    cargo chef cook --recipe-path recipe.json \
-    --target wasm32-unknown-unknown \
-    --manifest-path ui/Cargo.toml
+    cargo chef cook \
+      --recipe-path recipe-ui.json \
+      --target wasm32-unknown-unknown \
+      --manifest-path ui/Cargo.toml \
+      --features web \
+      --release
 
 # 2b – cache native deps
 FROM base AS cacher-site
 WORKDIR /app
-COPY --from=planner /app/recipe.json .
+COPY --from=planner-site /app/recipe-site.json .
 
 ARG CACHE_REGISTRY=registry
 ARG CACHE_GIT=git-db
@@ -66,8 +73,11 @@ ARG CACHE_SCCACHE=sccache
 RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=locked \
     --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
     --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
-    cargo chef cook --recipe-path recipe.json \
-    --package site
+    cargo chef cook \
+      --recipe-path recipe-site.json \
+      --package site \
+      --features ssr \
+      --release
 
 # 3 – build the actual project
 FROM base AS builder
