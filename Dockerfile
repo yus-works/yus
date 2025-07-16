@@ -32,7 +32,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # 2a – cache WASM deps
 FROM base AS cacher-ui
 WORKDIR /app
-COPY --from=planner-ui /app/recipe-ui.json .
+COPY --from=planner /app/recipe-ui.json .
 
 ARG CACHE_REGISTRY=registry
 ARG CACHE_GIT=git-db
@@ -51,7 +51,7 @@ RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=lo
 # 2b – cache native deps
 FROM base AS cacher-site
 WORKDIR /app
-COPY --from=planner-site /app/recipe-site.json .
+COPY --from=planner /app/recipe-site.json .
 
 ARG CACHE_REGISTRY=registry
 ARG CACHE_GIT=git-db
