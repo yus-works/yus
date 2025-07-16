@@ -2,14 +2,23 @@
 FROM rust:1.85-slim AS base
 RUN apt-get update \
  && apt-get install -y pkg-config libssl-dev ca-certificates \
+ && curl -L https://github.com/mozilla/sccache/releases/latest/download/sccache-x86_64-unknown-linux-musl.tar.gz \
+    | tar -xz -C /usr/local/bin --strip-components=1 \
  && rm -rf /var/lib/apt/lists/*
 
 # global Cargo/registry cache for all later stages
 ENV CARGO_HOME=/usr/local/cargo
 ENV CARGO_TARGET_DIR=/app/target
+ENV SCCACHE_DIR=/app/.sccache
+ENV RUSTC_WRAPPER=sccache
 
-RUN --mount=type=cache,id=registry,target=$CARGO_HOME/registry \
-    --mount=type=cache,id=git-db,target=$CARGO_HOME/git \
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
     cargo install cargo-chef --locked \
  && cargo install trunk --locked \
  && rustup target add wasm32-unknown-unknown
@@ -30,44 +39,38 @@ RUN mkdir -p ui/src site/src \
 
 RUN cargo chef prepare --recipe-path recipe.json
 
-# 2 – build all dependencies
+
+########## 2 – cook *both* dependency sets in one go
 FROM base AS cacher
 WORKDIR /app
 COPY --from=planner /app/recipe.json .
-
-RUN --mount=type=cache,id=registry,target=$CARGO_HOME/registry \
-    --mount=type=cache,id=git-db,target=$CARGO_HOME/git \
-    cargo chef cook --release --recipe-path recipe.json \
-    --target wasm32-unknown-unknown \
- && cargo chef cook --release --recipe-path recipe.json
-
-
-# 2a – cache WASM deps only
-FROM base AS cacher-ui
-WORKDIR /app
-COPY --from=planner /app/recipe.json .
-RUN cargo chef cook --recipe-path recipe.json \
-    --target wasm32-unknown-unknown \
-    --manifest-path ui/Cargo.toml
-
-# 2b – cache native deps
-FROM base AS cacher-site
-WORKDIR /app
-COPY --from=planner /app/recipe.json .
-RUN cargo chef cook --recipe-path recipe.json \
-    --package site
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+    cargo chef cook --recipe-path recipe.json --profile release --target wasm32-unknown-unknown \
+ && cargo chef cook --recipe-path recipe.json --profile release
 
 # 3 – build the actual project
 FROM base AS builder
 WORKDIR /app
 
 # re-use both dependency layers
-COPY --from=cacher-ui   /app/target /app/target
-COPY --from=cacher-site /app/target /app/target
+COPY --from=cacher   /app/target /app/target
 COPY . .
-RUN trunk build --release --public-url /pkg --dist ./dist
-WORKDIR /app/site
-RUN cargo build --release
+
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+    trunk build --release --public-url /pkg --dist ./dist
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+    cargo build -p site --release
 
 # 4 – final runtime image
 FROM debian:bookworm-slim
