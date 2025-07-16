@@ -27,6 +27,12 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock Trunk.toml ./
 COPY ui/Cargo.toml ui/
 COPY site/Cargo.toml site/
+
+# dummy targets so `cargo metadata` is happy.
+RUN mkdir -p ui/src site/src \
+ && printf 'fn main() {}\n' > site/src/main.rs \
+ && printf '// stub lib\n'   > ui/src/lib.rs
+
 RUN cargo chef prepare --recipe-path recipe.json
 
 # 2a – cache WASM deps
