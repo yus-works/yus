@@ -246,21 +246,6 @@ pub fn ProjectCards() -> impl IntoView {
     }
 }
 
-#[component]
-fn Experiments() -> impl IntoView {
-    view! {
-        <section id="experiments" class="py-8">
-            <h2 class="text-3xl font-bold text-text">Yus Experiments</h2>
-
-            <p class="text-text leading-relaxed">
-                "Needed a cube-planet visualiser for my Minecraft space-mod "
-                <a href="github.com/yus-works/velari" class="underline hover:text-[#E55934]">Velari</a>". "
-                "I picked up "<strong>wgpu</strong>", liked it, figured out how to integrate it with Leptos, and so here's a bunch of graphics demos I made for fun."<br/>
-            </p>
-        </section>
-    }
-}
-
 #[derive(Clone)]
 pub struct PassFlags(RwSignal<HashMap<String, RwSignal<bool>>>);
 
@@ -306,15 +291,22 @@ fn ShaderLab() -> impl IntoView {
     view! {
         <section id="shader-lab" class="py-8">
             <h2 class="text-3xl text-text font-bold mb-2">Shader Playground</h2>
-            <p class="mb-6 text-text">
-                Tweak any preset or pick another demo below.
+
+            <p class="text-text leading-relaxed">
+                "Needed a cube-planet visualiser for my Minecraft space-mod "
+                <a href="github.com/yus-works/velari" class="underline hover:text-accent">Velari</a>". "
+                "I picked up "<strong>wgpu</strong>", liked it, figured out how to integrate it with Leptos, and so here's a bunch of graphics demos I made for fun."<br/>
             </p>
+
+            <br/>
 
             <ul id="demo-tabs" class="flex gap-4 mb-4 border-b text-text">
                 {Demo::Animals     .labelled_button(selected_demo)}
                 {Demo::CubePlanet  .labelled_button(selected_demo)}
                 {Demo::FragIntro   .labelled_button(selected_demo)}
             </ul>
+
+            { move || selected_demo.get().description() }
 
             <div class="
                 grid grid-cols-1 lg:grid-cols-2
@@ -340,7 +332,6 @@ pub fn ClassicMain() -> impl IntoView {
       <main class="max-w-6xl mx-auto px-6">
           <Hero/>
           <ProjectCards/>
-          <Experiments/>
           <ShaderLab/>
       </main>
     }
