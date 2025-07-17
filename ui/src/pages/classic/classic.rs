@@ -54,7 +54,7 @@ pub fn ProjectCard(
     view! {
         <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
             { children() }
-            <img src=image alt="No image here yet :o" class="h-40 w-full object-cover"/>
+            <img src=image alt="No image here yet :o" class="pt-8 h-40 w-full object-cover"/>
             <div class="p-4">
                 <h3 class="font-semibold text-lg mb-1">{ title.clone() }</h3>
                 <p class="text-sm text-text">
