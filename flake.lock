@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "aliases": {
+      "locked": {
+        "dir": "flakes/git-aliases",
+        "lastModified": 1752771818,
+        "narHash": "sha256-VZW8RPPyrvizoVnjKkwYcEZ/qBVCMYO0NZEfahv81hE=",
+        "owner": "teodord25",
+        "repo": "dotfiles",
+        "rev": "cab47854d0673a40493cb1e257f986fa98925586",
+        "type": "github"
+      },
+      "original": {
+        "dir": "flakes/git-aliases",
+        "owner": "teodord25",
+        "repo": "dotfiles",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -36,6 +53,7 @@
     },
     "root": {
       "inputs": {
+        "aliases": "aliases",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
       }
