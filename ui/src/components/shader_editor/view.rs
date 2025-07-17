@@ -93,6 +93,12 @@ pub fn TabBar(
     };
 
     view! {
+        <Show when=move || is_desktop() && vim_enabled.get()>
+            <p class="text-text">
+                "⚠️ Using Vimium or similar browser extensions might cause conflicts with the vim mode."
+            </p>
+        </Show>
+
         <div class="flex justify-between items-center w-full">
             { mk_btn("VS", Tab::Vs) }
             { mk_btn("FS", Tab::Fs) }
