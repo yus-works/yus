@@ -50,7 +50,7 @@ impl Demo {
         match self {
             Demo::Animals => view! {
                 <p class="text-text text-lg">
-                    Inspired by:
+                    "Inspired by:"
                 </p>
                 <a
                     href="https://youtu.be/qlfh_rv6khY"
@@ -65,6 +65,9 @@ impl Demo {
                         loading="lazy"
                     />
                 </a>
+                <p class="text-text text-lg">
+                    "Toggle each render pass (skin, spine, points) in UI:"
+                </p>
                 <br/>
             }.into_any(),
             Demo::CubePlanet => view! {
