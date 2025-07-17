@@ -65,8 +65,10 @@ impl Demo {
                         loading="lazy"
                     />
                 </a>
+                <br/>
                 <p class="text-text text-lg">
-                    "Toggle each render pass (skin, spine, points) in UI:"
+                    "Edit the vertex shader (VS), fragment shader (FS) or "
+                    "toggle each render pass (skin, spine, points) in the UI tab"
                 </p>
                 <br/>
             }.into_any(),
