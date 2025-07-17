@@ -46,6 +46,53 @@ impl Demo {
         }
     }
 
+    pub fn description(&self) -> impl IntoView + use<> {
+        match self {
+            Demo::Animals => view! {
+                <p class="text-text text-lg">
+                    Inspired by:
+                </p>
+                <a
+                    href="https://youtu.be/qlfh_rv6khY"
+                    target="_blank"
+                    rel="noopener"
+                    class="block w-[200px] aspect-video rounded overflow-hidden shadow-sm"
+                >
+                    <img
+                        class="w-full h-full object-cover"
+                        src="https://img.youtube.com/vi/qlfh_rv6khY/hqdefault.jpg"
+                        alt="YouTube thumbnail"
+                        loading="lazy"
+                    />
+                </a>
+            }.into_any(),
+            Demo::CubePlanet => view! {
+                <p class="text-text text-lg">
+                    "Needed a cube-planet visualiser for my Minecraft space-mod to figure out which plane to cube mappings look decent."
+                </p>
+                <br/>
+            }.into_any(),
+            Demo::FragIntro => view! {
+                <p class="text-text text-lg">
+                    Inspired by:
+                </p>
+                <a
+                    href="https://youtu.be/f4s1h2YETNY"
+                    target="_blank"
+                    rel="noopener"
+                    class="block w-[200px] aspect-video rounded overflow-hidden shadow-sm"
+                >
+                    <img
+                        class="w-full h-full object-cover"
+                        src="https://img.youtube.com/vi/f4s1h2YETNY/hqdefault.jpg"
+                        alt="YouTube thumbnail"
+                        loading="lazy"
+                    />
+                </a>
+            }.into_any(),
+        }
+    }
+
     /// Returns a View that mounts the proper canvas component
     pub fn canvas(
         self,
@@ -87,16 +134,16 @@ pub fn to_clip_space(e: &PointerEvent, canvas: &HtmlCanvasElement) -> Vec2 {
     // canvas-relative position in **device pixels**
     let html: &HtmlElement = canvas.unchecked_ref();
     let rect = html.get_bounding_client_rect();
-    let scale_x = canvas.width()  as f32 / rect.width()  as f32;   // Hi-DPI
+    let scale_x = canvas.width() as f32 / rect.width() as f32; // Hi-DPI
     let scale_y = canvas.height() as f32 / rect.height() as f32;
 
     let x_px = (e.client_x() as f32 - rect.left() as f32) * scale_x;
-    let y_px = (e.client_y() as f32 - rect.top()  as f32) * scale_y;
+    let y_px = (e.client_y() as f32 - rect.top() as f32) * scale_y;
 
     // device-pixels → NDC
     let mut p = Vec2::new(
-        2.0 * (x_px / canvas.width()  as f32) - 1.0,
-       -2.0 * (y_px / canvas.height() as f32) + 1.0,
+        2.0 * (x_px / canvas.width() as f32) - 1.0,
+        -2.0 * (y_px / canvas.height() as f32) + 1.0,
     );
 
     // reverse the squeeze that view_proj applies

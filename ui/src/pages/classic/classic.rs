@@ -316,6 +316,8 @@ fn ShaderLab() -> impl IntoView {
                 {Demo::FragIntro   .labelled_button(selected_demo)}
             </ul>
 
+            { move || selected_demo.get().description() }
+
             <div class="
                 grid grid-cols-1 lg:grid-cols-2
                 gap-y-12
