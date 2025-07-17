@@ -1,27 +1,32 @@
 # 0 – common base with toolchain
 FROM rust:1.85-slim AS base
 RUN apt-get update \
- && apt-get install -y pkg-config libssl-dev ca-certificates \
+ && apt-get install -y pkg-config libssl-dev ca-certificates curl sccache \
  && rm -rf /var/lib/apt/lists/*
 
 # global Cargo/registry cache for all later stages
 ENV CARGO_HOME=/usr/local/cargo
 ENV CARGO_TARGET_DIR=/app/target
+ENV SCCACHE_DIR=/app/.sccache
+ENV RUSTC_WRAPPER=sccache
 
-RUN --mount=type=cache,id=registry,target=$CARGO_HOME/registry \
-    --mount=type=cache,id=git-db,target=$CARGO_HOME/git \
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
     cargo install cargo-chef --locked \
  && cargo install trunk --locked \
  && rustup target add wasm32-unknown-unknown
 
-# 1 – dependency graph
+# 1a — ui dep graph
 FROM base AS planner
 WORKDIR /app
-
-# copy only manifests
 COPY Cargo.toml Cargo.lock Trunk.toml ./
-COPY ui/Cargo.toml       ./ui/
-COPY site/Cargo.toml     ./site/
+COPY ui/Cargo.toml ui/
+COPY site/Cargo.toml site/
 
 # dummy targets so `cargo metadata` is happy.
 RUN mkdir -p ui/src site/src \
@@ -30,32 +35,41 @@ RUN mkdir -p ui/src site/src \
 
 RUN cargo chef prepare --recipe-path recipe.json
 
-# 2 – build all dependencies
-FROM base AS cacher
-WORKDIR /app
-COPY --from=planner /app/recipe.json .
-
-RUN --mount=type=cache,id=registry,target=$CARGO_HOME/registry \
-    --mount=type=cache,id=git-db,target=$CARGO_HOME/git \
-    cargo chef cook --release --recipe-path recipe.json \
-    --target wasm32-unknown-unknown \
- && cargo chef cook --release --recipe-path recipe.json
-
-
-# 2a – cache WASM deps only
+# 2a – cache WASM deps
 FROM base AS cacher-ui
 WORKDIR /app
 COPY --from=planner /app/recipe.json .
-RUN cargo chef cook --recipe-path recipe.json \
-    --target wasm32-unknown-unknown \
-    --manifest-path ui/Cargo.toml
+
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=locked \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
+    cargo chef cook \
+      --recipe-path recipe.json \
+      --target wasm32-unknown-unknown \
+      --manifest-path ui/Cargo.toml \
+      --features web \
+      --release
 
 # 2b – cache native deps
 FROM base AS cacher-site
 WORKDIR /app
 COPY --from=planner /app/recipe.json .
-RUN cargo chef cook --recipe-path recipe.json \
-    --package site
+
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry,sharing=locked \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git,sharing=locked \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR,sharing=locked \
+    cargo chef cook \
+      --recipe-path recipe.json \
+      --package site \
+      --release
 
 # 3 – build the actual project
 FROM base AS builder
@@ -65,12 +79,28 @@ WORKDIR /app
 COPY --from=cacher-ui   /app/target /app/target
 COPY --from=cacher-site /app/target /app/target
 COPY . .
-RUN trunk build --release --public-url /pkg --dist ./dist
-WORKDIR /app/site
-RUN cargo build --release
+
+ARG CACHE_REGISTRY=registry
+ARG CACHE_GIT=git-db
+ARG CACHE_SCCACHE=sccache
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+    trunk build --release --public-url /pkg --dist ./dist
+
+RUN --mount=type=cache,id=$CACHE_REGISTRY,target=$CARGO_HOME/registry \
+    --mount=type=cache,id=$CACHE_GIT,target=$CARGO_HOME/git \
+    --mount=type=cache,id=$CACHE_SCCACHE,target=$SCCACHE_DIR \
+    cargo build -p site --release
 
 # 4 – final runtime image
 FROM debian:bookworm-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=builder /app/target/release/site ./site
 COPY --from=builder /app/dist                ./dist
