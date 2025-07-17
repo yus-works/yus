@@ -65,6 +65,7 @@ impl Demo {
                         loading="lazy"
                     />
                 </a>
+                <br/>
             }.into_any(),
             Demo::CubePlanet => view! {
                 <p class="text-text text-lg">
@@ -89,6 +90,7 @@ impl Demo {
                         loading="lazy"
                     />
                 </a>
+                <br/>
             }.into_any(),
         }
     }
