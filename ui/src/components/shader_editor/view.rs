@@ -5,6 +5,7 @@ use leptos::prelude::AnyView;
 use leptos::prelude::For;
 use leptos::prelude::IntoAny;
 use leptos::prelude::Memo;
+use leptos::prelude::Update;
 use leptos::prelude::event_target_checked;
 use leptos::{
     IntoView, component,
@@ -61,8 +62,11 @@ fn OptionsPanel(pass_flags: PassFlags) -> impl IntoView {
 }
 
 #[component]
-pub fn TabBar(active_tab: RwSignal<Tab>, ui_enabled: Memo<bool>) -> impl IntoView {
-    // helper returns an AnyView, so its concrete type stays small
+pub fn TabBar(
+    active_tab: RwSignal<Tab>,
+    ui_enabled: Memo<bool>,
+    vim_enabled: RwSignal<bool>,
+) -> impl IntoView {
     let mk_btn = move |label: &'static str, tab: Tab| -> AnyView {
         let active_tab = active_tab.clone();
 
@@ -87,7 +91,7 @@ pub fn TabBar(active_tab: RwSignal<Tab>, ui_enabled: Memo<bool>) -> impl IntoVie
     };
 
     view! {
-        <div class="flex space-x-1">
+        <div class="flex justify-between items-center w-full">
             { mk_btn("VS", Tab::Vs) }
             { mk_btn("FS", Tab::Fs) }
             {
@@ -95,10 +99,27 @@ pub fn TabBar(active_tab: RwSignal<Tab>, ui_enabled: Memo<bool>) -> impl IntoVie
                     if ui_enabled.get() {
                         mk_btn("UI", Tab::Ui)
                     } else {
-                        view!{}.into_any()
+                        view! {}.into_any()
                     }
                 }
             }
+
+            <Show when=move || is_desktop()>
+                <div class="ml-auto">
+                    <button
+                        class="px-3 py-1 text-text border rounded hover:text-accent"
+                        on:click=move |_| vim_enabled.update(|b| *b = !*b)
+                    >
+                        { move || {
+                            if vim_enabled.get() {
+                                "Disable Vim Mode"
+                            } else {
+                                "Enable Vim Mode"
+                            }
+                        }}
+                    </button>
+                </div>
+            </Show>
         </div>
     }
 }
@@ -122,24 +143,28 @@ fn CodeArea(
     on_input: Handler<web_sys::Event>,
     on_keydown: Handler<web_sys::KeyboardEvent>,
 
+    vim_enabled: RwSignal<bool>,
     mode: RwSignal<Mode>,
 
     /// NodeRef so the parent can call `.focus()` etc.
     textarea_ref: NodeRef<Textarea>,
 ) -> impl IntoView {
     view! {
-        <textarea
-            class=move || format!(
-                "flex-1 bg-surface text-text text-xs p-4 font-mono rounded-xl resize-none \
-                 border border-transparent focus:border-gray-300 focus:outline-none \
-                 focus:ring-1 focus:ring-gray-400 focus:ring-opacity-50 \
-                 selection:bg-text selection:text-surface {}",
-                if mode.get() == Mode::Normal {
-                    "caret-transparent"
-                } else {
+        <textarea 
+            class=move || {
+                let base = "flex-1 bg-surface text-text text-xs p-4 font-mono \
+                            rounded-xl resize-none border border-transparent \
+                            focus:border-gray-300 focus:outline-none \
+                            focus:ring-1 focus:ring-gray-400 focus:ring-opacity-50 \
+                            selection:bg-text selection:text-surface";
+                let caret = if !vim_enabled.get() || mode.get() == Mode::Insert {
                     "caret-visible"
-                }
-            )
+                } else {
+                    "caret-transparent"
+                };
+
+                format!("{base} {caret}")
+            }
             prop:value = move || match tab.get() {
                 Tab::Vs => vs_src.get(),
                 Tab::Fs => fs_src.get(),
@@ -161,7 +186,7 @@ pub fn ShaderEditor(
     pass_flags: PassFlags,
     selected_demo: RwSignal<Demo>,
 ) -> impl IntoView {
-    let vim_enabled = is_desktop();
+    let vim_enabled = RwSignal::new(false);
 
     let active_tab = RwSignal::new(Tab::Vs);
 
@@ -191,12 +216,12 @@ pub fn ShaderEditor(
 
     view! {
         <div class="w-full h-[40rem] flex flex-col" on:click=focus_textarea>
-            <TabBar active_tab ui_enabled />
+            <TabBar active_tab ui_enabled vim_enabled />
 
             <Show when=move || active_tab.get() != Tab::Ui>
                 {   // these closures must be Fn, so build fresh handlers every call
                     let key_handler: Handler<web_sys::KeyboardEvent> =
-                        Box::new(keydown(vim_enabled, mode, textarea_ref.clone()));
+                        Box::new(keydown(vim_enabled.get(), mode, textarea_ref.clone()));
 
                     let on_input: Handler<web_sys::Event> = Box::new(move |ev| {
                         let val = event_target_value(&ev);
@@ -213,9 +238,10 @@ pub fn ShaderEditor(
                             fs_src = fs_src
                             tab = active_tab
                             textarea_ref = textarea_ref.clone()
-                            mode = mode
+                            mode
+                            vim_enabled
 
-                            on_input = on_input
+                            on_input
                             on_keydown = key_handler
                         />
                     }.into_any()
@@ -231,7 +257,7 @@ pub fn ShaderEditor(
                 }
             </Show>
 
-            <Show when=move || vim_enabled>
+            <Show when=move || vim_enabled.get()>
                 { view! { <StatusBar status/> }.into_any() }
             </Show>
         </div>
