@@ -1,8 +1,10 @@
 use crate::components::demo::Demo;
+use crate::components::shader_editor::utils::update_block_cursor;
 use crate::components::demos::utils::is_desktop;
 use crate::pages::classic::classic::PassFlags;
 use leptos::prelude::AnyView;
 use leptos::prelude::For;
+use leptos::prelude::GetUntracked;
 use leptos::prelude::IntoAny;
 use leptos::prelude::Memo;
 use leptos::prelude::Update;
@@ -174,6 +176,30 @@ fn CodeArea(
             on:input=on_input
             on:keydown=on_keydown
             node_ref=textarea_ref
+
+            on:focus={
+                let vim_enabled  = vim_enabled.clone();
+                let mode         = mode.clone();
+                let textarea_ref = textarea_ref.clone();
+
+                move |_| {
+                    if vim_enabled.get_untracked() && mode.get_untracked() == Mode::Normal {
+                        update_block_cursor(&textarea_ref, Mode::Normal);
+                    }
+                }
+            }
+
+            on:click={
+                let vim_enabled  = vim_enabled.clone();
+                let mode         = mode.clone();
+                let textarea_ref = textarea_ref.clone();
+
+                move |_| {
+                    if vim_enabled.get_untracked() && mode.get_untracked() == Mode::Normal {
+                        update_block_cursor(&textarea_ref, Mode::Normal);
+                    }
+                }
+            }
         />
     }
 }

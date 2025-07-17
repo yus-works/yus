@@ -43,7 +43,7 @@ pub(crate) fn keydown(
     }
 }
 
-fn update_block_cursor(textarea: &NodeRef<Textarea>, mode: Mode) {
+pub(crate) fn update_block_cursor(textarea: &NodeRef<Textarea>, mode: Mode) {
     let Some(t) = textarea.get() else { return };
 
     let pos = t.selection_start().unwrap().unwrap();
