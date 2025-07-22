@@ -1,11 +1,20 @@
-use std::{env, sync::Arc, time::Duration};
+use actix_web::{get, web};
 use moka::future::Cache;
+use octocrab::Octocrab;
 use once_cell::sync::Lazy;
-use actix_web::{App, HttpServer, get, web};
-use chrono::{DateTime, Utc};
-use octocrab::{Octocrab, models::Repository};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
+use std::{env, sync::Arc, time::Duration};
+
+use crate::languages::LANG_TABLE;
+
+#[derive(Serialize, Clone)]
+struct LangDto {
+    name: String,
+    pct: f32,
+    color: Option<String>,
+    icon: Option<String>,
+}
 
 #[derive(Serialize, Clone)]
 struct ProjectDto {
@@ -13,20 +22,19 @@ struct ProjectDto {
     description: Option<String>,
     version: Option<String>,
     status: String,
-    labels: Vec<String>,           // from repo topics
-    languages: Vec<(String, f32)>, // (lang, pct)
+    labels: Vec<String>, // from repo topics
+    languages: Vec<LangDto>,
 }
 
 static CLIENT: OnceCell<Arc<Octocrab>> = OnceCell::new();
 
 /// 5-minute cache keyed by login string
 static PROJECT_CACHE: Lazy<Cache<String, Arc<Vec<ProjectDto>>>> = Lazy::new(|| {
-        Cache::builder()
-            .time_to_live(Duration::from_secs(300))   // 5 min
-            .max_capacity(32)                         // safety cap
-            .build()
-    });
-
+    Cache::builder()
+        .time_to_live(Duration::from_secs(300)) // 5 min
+        .max_capacity(32) // safety cap
+        .build()
+});
 
 fn gh() -> &'static Octocrab {
     CLIENT
@@ -136,10 +144,16 @@ async fn projects() -> actix_web::Result<web::Json<Vec<ProjectDto>>> {
                 langs_json
                     .iter()
                     .filter_map(|l| {
-                        Some((
-                            l.pointer("/node/name")?.as_str()?.to_owned(),
-                            (l.get("size")?.as_u64()? as f32 / total) * 100.0,
-                        ))
+                        let name = l.pointer("/node/name")?.as_str()?.to_owned();
+                        let pct = (l.get("size")?.as_u64()? as f32 / total) * 100.0;
+
+                        let meta = LANG_TABLE.get(&name);
+                        Some(LangDto {
+                            name,
+                            pct,
+                            color: meta.and_then(|m| m.color.as_ref().cloned()),
+                            icon: meta.and_then(|m| m.devicon.as_ref().cloned()),
+                        })
                     })
                     .collect()
             };
