@@ -15,8 +15,12 @@ pub static LANG_TABLE: Lazy<HashMap<String, LangMeta>> = Lazy::new(|| {
 
     static DEVICON: &[(&str, &str)] = &[
         ("Rust", "rust-plain"),
-        ("Go", "go-original"),
+        ("Go", "go-plain"),
         ("JavaScript", "javascript-plain"),
+        ("Java", "java-plain"),
+        ("Kotlin", "kotlin-plain"),
+        ("Nix", "nixos-plain"),
+        ("WGSL", "webgpu-plain"),
         ("TypeScript", "typescript-plain"),
         ("HTML", "html5-plain"),
         ("CSS", "css3-plain"),
