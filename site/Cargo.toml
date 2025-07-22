@@ -19,3 +19,4 @@ octocrab = "0.44.1"
 chrono = { version = "0.4.41", features = ["serde"] }
 once_cell = "1.21.3"
 moka = { version = "0.12.10", features = ["future"] }
+yaml-rust = "0.4.5"
