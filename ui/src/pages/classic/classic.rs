@@ -83,7 +83,6 @@ fn LangsLine(dto: ProjectDto) -> impl IntoView {
         )
     };
 
-
     let icon = move |seg: LangDto, show_icon: bool| {
         if show_icon {
             seg.icon.as_ref().map(|ic| view!{
