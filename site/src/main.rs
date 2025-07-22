@@ -5,6 +5,7 @@ use std::env;
 use dotenvy::dotenv;
 
 pub mod api;
+pub mod languages;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

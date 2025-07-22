@@ -11,6 +11,7 @@ use leptos::prelude::NodeRef;
 use leptos::prelude::NodeRefAttribute;
 use leptos::prelude::OnAttribute;
 use leptos::prelude::RwSignal;
+use leptos::prelude::StyleAttribute;
 use leptos::prelude::Suspense;
 use leptos::prelude::Update;
 use leptos::prelude::view;
@@ -44,9 +45,78 @@ fn Hero() -> impl IntoView {
 }
 
 #[component]
+fn LangsTooltip(dto: ProjectDto) -> impl IntoView {
+    let tooltip_lines = dto
+        .languages
+        .iter()
+        .map(|l| format!("{} {:.1}%", l.name, l.pct))
+        .collect::<Vec<_>>();
+
+    view! {
+        <div class="
+            pointer-events-none
+            absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+            hidden group-hover:block
+        "
+        aria-hidden="true">
+            <div class="bg-neutral-900 text-xs text-white px-3 py-2 rounded shadow">
+                <ul class="space-y-0.5">
+                    <For
+                        each=move || tooltip_lines.clone()
+                        key=|s| s.clone()
+                        children=move |line| {
+                            view! { <li>{ line }</li> }
+                        }
+                    />
+                </ul>
+            </div>
+        </div>
+    }
+}
+
+#[component]
+fn LangsLine(dto: ProjectDto) -> impl IntoView {
+    let style = move |seg: LangDto| format!(
+        "width:{:.3}%;background:{};",
+        seg.pct,
+        seg.color.as_deref().unwrap_or("#666")
+    );
+
+    let icon = move |seg: LangDto, show_icon: bool| {
+        if show_icon {
+            seg.icon.as_ref().map(|ic| view!{
+                <i class=format!("devicon-{} text-white text-[1.25rem] leading-none", ic)></i>
+            })
+        } else { None }
+    };
+
+    let children = move |seg: LangDto| {
+        let s = seg.clone();
+        let show_icon = seg.pct >= 8.0;
+        view! {
+            <div
+                class="relative flex items-center justify-center"
+                style=style(s)
+            >
+                { icon(seg, show_icon) }
+            </div>
+        }
+    };
+
+    view! {
+        <div class="relative w-full h-8 rounded-b-xl overflow-hidden flex">
+            <For
+                each=move || dto.languages.clone()
+                key=|seg| seg.name.clone()
+                children=children
+            />
+        </div>
+    }
+}
+
+#[component]
 pub fn ProjectCard(
-    title: String,
-    desc: String,
+    dto: ProjectDto,
     image: String,
     #[prop(optional)] extra: Option<&'static str>,
     children: Children,
@@ -56,11 +126,15 @@ pub fn ProjectCard(
             { children() }
             <img src=image alt="No image here yet :o" class="pt-8 h-40 w-full object-cover"/>
             <div class="p-4">
-                <h3 class="font-semibold text-lg mb-1">{ title.clone() }</h3>
+                <h3 class="font-semibold text-lg mb-1">{ dto.name.clone() }</h3>
                 <p class="text-sm">
-                    { desc }
+                    { dto.description.clone() }
                     { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
                 </p>
+            </div>
+            <div class="group relative w-full mt-3">
+                <LangsTooltip dto=dto.clone() />
+                <LangsLine dto=dto.clone() />
             </div>
         </article>
     }
@@ -69,13 +143,21 @@ pub fn ProjectCard(
 use gloo_net::http::Request;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct LangDto {
+    name: String,
+    pct: f32,
+    color: Option<String>,
+    icon: Option<String>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct ProjectDto {
     name: String,
     description: Option<String>,
     version: Option<String>,
     status: String,
-    labels: Vec<String>,           // from repo topics
-    languages: Vec<(String, f32)>, // (lang, pct)
+    labels: Vec<String>,     // from repo topics
+    languages: Vec<LangDto>, // (lang, pct)
 }
 
 #[component]
@@ -131,8 +213,7 @@ pub fn ProjectCards() -> impl IntoView {
 
         view! {
             <ProjectCard
-                title=p.name.clone()
-                desc=p.description.clone().unwrap_or_default()
+                dto=p.clone()
                 image=String::from("/img/rocket.jpg")
             >
                 <span
@@ -222,7 +303,7 @@ pub fn ProjectCards() -> impl IntoView {
                         view! {
                             <div
                                 node_ref=lane_ref
-                                class="flex gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                                class="flex gap-8 pb-3 overflow-x-auto snap-x snap-mandatory scroll-smooth"
                                 on:scroll=on_scroll
                             >
                                 <For
