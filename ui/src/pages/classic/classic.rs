@@ -76,11 +76,12 @@ fn LangsTooltip(dto: ProjectDto) -> impl IntoView {
 
 #[component]
 fn LangsLine(dto: ProjectDto) -> impl IntoView {
-    let style = move |seg: LangDto| format!(
-        "width:{:.3}%;background:{};",
-        seg.pct,
-        seg.color.as_deref().unwrap_or("#666")
-    );
+    let style = move |seg: LangDto| {
+        format!(
+            "flex:{:.3} 0 0;background:{};",
+            seg.pct, seg.color.as_deref().unwrap_or("#666")
+        )
+    };
 
     let icon = move |seg: LangDto, show_icon: bool| {
         if show_icon {
@@ -95,7 +96,7 @@ fn LangsLine(dto: ProjectDto) -> impl IntoView {
         let show_icon = seg.pct >= 8.0;
         view! {
             <div
-                class="relative flex items-center justify-center"
+                class="basis-0 relative flex items-center justify-center"
                 style=style(s)
             >
                 { icon(seg, show_icon) }
@@ -115,14 +116,14 @@ fn LangsLine(dto: ProjectDto) -> impl IntoView {
 }
 
 #[component]
-pub fn ProjectCard(
+fn ProjectCard(
     dto: ProjectDto,
     image: String,
     #[prop(optional)] extra: Option<&'static str>,
     children: Children,
 ) -> impl IntoView {
     view! {
-        <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
+        <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start flex flex-col">
             { children() }
             <img src=image alt="No image here yet :o" class="pt-8 h-40 w-full object-cover"/>
             <div class="p-4">
@@ -132,7 +133,7 @@ pub fn ProjectCard(
                     { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
                 </p>
             </div>
-            <div class="group relative w-full mt-3">
+            <div class="group relative w-full mt-3 mt-auto">
                 <LangsTooltip dto=dto.clone() />
                 <LangsLine dto=dto.clone() />
             </div>

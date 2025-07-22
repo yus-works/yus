@@ -1,7 +1,6 @@
 use std::{fs, num::{NonZeroU32, NonZeroU64}, ops::Deref};
 use anyhow::{Context, Result};
 use glam::{Mat4, Vec3};
-use web_sys::window;
 use wgpu::{util::DeviceExt, SurfaceTarget};
 use crate::web_sys::HtmlCanvasElement;
 
@@ -151,12 +150,6 @@ pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Bu
         time_buffer,
         resolution_buffer,
     )
-}
-
-fn now_ms() -> f64 {
-    window().unwrap()
-        .performance().unwrap()
-        .now()                // DOMHighResTimeStamp
 }
 
 pub fn common_bind_group(
