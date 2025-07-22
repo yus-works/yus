@@ -269,15 +269,6 @@ fn make_skin_pipe(st: &GpuState, vs_src: &str, fs_src: &str) -> wgpu::RenderPipe
         })
 }
 
-fn create_skin_vbuf(sc: &SurfaceContext, byte_cap: u64) -> wgpu::Buffer {
-    sc.device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("skin-vbuf"),
-        size: byte_cap,
-        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    })
-}
-
 pub(crate) fn make_skin_rpass(
     snake: Rc<RefCell<Animal>>,
     width: f32,
@@ -350,36 +341,6 @@ pub(crate) fn make_skin_rpass(
     ));
 
     (pass, pipeline)
-}
-
-pub(crate) fn click_add_points(
-    points_rc: Rc<RefCell<Vec<Vec2>>>,
-) -> impl FnOnce(&HtmlCanvasElement) {
-    let pts_master = points_rc.clone(); // one shared handle
-
-    move |canvas: &HtmlCanvasElement| {
-        // one handle just for registering the listener (borrowed immutably)
-        let canvas_ref = canvas.clone();
-
-        // a second handle that the callback owns outright
-        let canvas_owned = canvas.clone();
-
-        let pts = pts_master.clone();
-
-        add_listener::<web_sys::PointerEvent, _>(
-            &canvas_ref, // immutable borrow lives only for this call
-            "pointerdown",
-            move |e| {
-                if e.button() != 0 {
-                    return;
-                }
-
-                // use the owned handle inside
-                let p = to_clip_space(&e, &canvas_owned);
-                pts.borrow_mut().push(p);
-            },
-        );
-    }
 }
 
 pub(crate) fn solve_chain(

@@ -153,12 +153,6 @@ pub fn create_ubos(sc: &SurfaceContext) -> (wgpu::Buffer, wgpu::Buffer, wgpu::Bu
     )
 }
 
-fn now_ms() -> f64 {
-    window().unwrap()
-        .performance().unwrap()
-        .now()                // DOMHighResTimeStamp
-}
-
 pub fn common_bind_group(
     device: &wgpu::Device,
 
