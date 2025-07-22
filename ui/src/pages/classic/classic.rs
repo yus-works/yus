@@ -75,6 +75,46 @@ fn LangsTooltip(dto: ProjectDto) -> impl IntoView {
 }
 
 #[component]
+fn LangsLine(dto: ProjectDto) -> impl IntoView {
+    let style = move |seg: LangDto| format!(
+        "width:{:.3}%;background:{};",
+        seg.pct,
+        seg.color.as_deref().unwrap_or("#666")
+    );
+
+    let icon = move |seg: LangDto, show_icon: bool| {
+        if show_icon {
+            seg.icon.as_ref().map(|ic| view!{
+                <i class=format!("devicon-{} text-white text-[1.25rem] leading-none", ic)></i>
+            })
+        } else { None }
+    };
+
+    let children = move |seg: LangDto| {
+        let s = seg.clone();
+        let show_icon = seg.pct >= 8.0;
+        view! {
+            <div
+                class="relative flex items-center justify-center"
+                style=style(s)
+            >
+                { icon(seg, show_icon) }
+            </div>
+        }
+    };
+
+    view! {
+        <div class="relative w-full h-8 rounded-b-xl overflow-hidden flex">
+            <For
+                each=move || dto.languages.clone()
+                key=|seg| seg.name.clone()
+                children=children
+            />
+        </div>
+    }
+}
+
+#[component]
 pub fn ProjectCard(
     dto: ProjectDto,
     image: String,
@@ -93,34 +133,8 @@ pub fn ProjectCard(
                 </p>
             </div>
             <div class="group relative w-full mt-3">
-                <LangsTooltip dto=dto.clone()/>
-                <div class="relative w-full h-8 rounded-b-xl overflow-hidden flex">
-                    <For
-                        each=move || dto.languages.clone()
-                        key=|seg| seg.name.clone()
-                        children=move |seg: LangDto| {
-                            let show_icon = seg.pct >= 8.0;
-                            view! {
-                                <div
-                                    class="relative flex items-center justify-center"
-                                    style=move || format!(
-                                        "width:{:.3}%;background:{};",
-                                        seg.pct,
-                                        seg.color.as_deref().unwrap_or("#666")
-                                    )
-                                >
-                                    { move ||
-                                        if show_icon {
-                                            seg.icon.as_ref().map(|ic| view!{
-                                                <i class=format!("devicon-{} text-white text-[1.25rem] leading-none", ic)></i>
-                                            })
-                                        } else { None }
-                                    }
-                                </div>
-                            }
-                        }
-                    />
-                </div>
+                <LangsTooltip dto=dto.clone() />
+                <LangsLine dto=dto.clone() />
             </div>
         </article>
     }
