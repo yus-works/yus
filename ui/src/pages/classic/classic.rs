@@ -76,11 +76,13 @@ fn LangsTooltip(dto: ProjectDto) -> impl IntoView {
 
 #[component]
 fn LangsLine(dto: ProjectDto) -> impl IntoView {
-    let style = move |seg: LangDto| format!(
-        "width:{:.3}%;background:{};",
-        seg.pct,
-        seg.color.as_deref().unwrap_or("#666")
-    );
+    let style = move |seg: LangDto| {
+        format!(
+            "flex:{:.3} 0 0;background:{};",
+            seg.pct, seg.color.as_deref().unwrap_or("#666")
+        )
+    };
+
 
     let icon = move |seg: LangDto, show_icon: bool| {
         if show_icon {
@@ -95,7 +97,7 @@ fn LangsLine(dto: ProjectDto) -> impl IntoView {
         let show_icon = seg.pct >= 8.0;
         view! {
             <div
-                class="relative flex items-center justify-center"
+                class="basis-0 relative flex items-center justify-center"
                 style=style(s)
             >
                 { icon(seg, show_icon) }
