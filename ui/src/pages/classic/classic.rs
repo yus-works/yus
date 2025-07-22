@@ -122,7 +122,7 @@ fn ProjectCard(
     children: Children,
 ) -> impl IntoView {
     view! {
-        <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
+        <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start flex flex-col">
             { children() }
             <img src=image alt="No image here yet :o" class="pt-8 h-40 w-full object-cover"/>
             <div class="p-4">
@@ -132,7 +132,7 @@ fn ProjectCard(
                     { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
                 </p>
             </div>
-            <div class="group relative w-full mt-3">
+            <div class="group relative w-full mt-3 mt-auto">
                 <LangsTooltip dto=dto.clone() />
                 <LangsLine dto=dto.clone() />
             </div>
