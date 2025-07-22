@@ -64,7 +64,7 @@ fn OptionsPanel(pass_flags: PassFlags) -> impl IntoView {
 }
 
 #[component]
-pub fn TabBar(
+fn TabBar(
     active_tab: RwSignal<Tab>,
     ui_enabled: Memo<bool>,
     vim_enabled: RwSignal<bool>,
