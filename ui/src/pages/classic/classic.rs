@@ -289,7 +289,7 @@ pub fn ProjectCards() -> impl IntoView {
                         view! {
                             <div
                                 node_ref=lane_ref
-                                class="flex gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                                class="flex gap-8 pb-3 overflow-x-auto snap-x snap-mandatory scroll-smooth"
                                 on:scroll=on_scroll
                             >
                                 <For
