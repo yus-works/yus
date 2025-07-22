@@ -58,70 +58,65 @@ pub fn ProjectCard(
         .collect::<Vec<_>>();
 
     view! {
-            <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
-                { children() }
-                <img src=image alt="No image here yet :o" class="pt-8 h-40 w-full object-cover"/>
-                <div class="p-4">
-                    <h3 class="font-semibold text-lg mb-1">{ dto.name.clone() }</h3>
-                    <p class="text-sm">
-                        { dto.description }
-                        { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
-                    </p>
+        <article class="relative bg-neutral-light rounded-xl overflow-hidden shadow flex-shrink-0 w-80 snap-start">
+            { children() }
+            <img src=image alt="No image here yet :o" class="pt-8 h-40 w-full object-cover"/>
+            <div class="p-4">
+                <h3 class="font-semibold text-lg mb-1">{ dto.name.clone() }</h3>
+                <p class="text-sm">
+                    { dto.description }
+                    { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
+                </p>
+            </div>
+            <div class="group relative w-full mt-3">
+                <div class="
+                    pointer-events-none
+                    absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                    hidden group-hover:block
+                "
+                aria-hidden="true">
+                    <div class="bg-neutral-900 text-xs text-white px-3 py-2 rounded shadow">
+                        <ul class="space-y-0.5">
+                            <For
+                                each=move || tooltip_lines.clone()
+                                key=|s| s.clone()
+                                children=move |line| {
+                                    view! { <li>{ line }</li> }
+                                }
+                            />
+                        </ul>
+                    </div>
                 </div>
-
-      <div class="group relative w-full mt-3">
-
-      <div
-        class="
-      pointer-events-none
-      absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-      hidden group-hover:block
-    "
-        aria-hidden="true"
-      >
-        <div class="bg-neutral-900 text-xs text-white px-3 py-2 rounded shadow">
-          <ul class="space-y-0.5">
-            <For
-              each=move || tooltip_lines.clone()
-              key=|s| s.clone()
-              children=move |line| {
-                view! { <li>{ line }</li> }
-              }
-            />
-          </ul>
-        </div>
-      </div>
-
-        <div class="relative w-full h-8 rounded-b-xl overflow-hidden flex">
-          <For
-            each=move || dto.languages.clone()
-            key=|seg| seg.name.clone()
-            children=move |seg: LangDto| {
-              let show_icon = seg.pct >= 8.0;
-              view! {
-                <div
-                  class="relative flex items-center justify-center"
-                  style=move || format!(
-                    "width:{:.3}%;background:{};",
-                    seg.pct,
-                    seg.color.as_deref().unwrap_or("#666")
-                  )
-                >
-                  { move || if show_icon {
-                      seg.icon.as_ref().map(|ic| view!{
-                        <i class=format!("devicon-{} text-white text-[1.25rem] leading-none", ic)></i>
-                      })
-                    } else { None }
-                  }
+                <div class="relative w-full h-8 rounded-b-xl overflow-hidden flex">
+                    <For
+                        each=move || dto.languages.clone()
+                        key=|seg| seg.name.clone()
+                        children=move |seg: LangDto| {
+                            let show_icon = seg.pct >= 8.0;
+                            view! {
+                                <div
+                                    class="relative flex items-center justify-center"
+                                    style=move || format!(
+                                        "width:{:.3}%;background:{};",
+                                        seg.pct,
+                                        seg.color.as_deref().unwrap_or("#666")
+                                    )
+                                >
+                                    { move ||
+                                        if show_icon {
+                                            seg.icon.as_ref().map(|ic| view!{
+                                                <i class=format!("devicon-{} text-white text-[1.25rem] leading-none", ic)></i>
+                                            })
+                                        } else { None }
+                                    }
+                                </div>
+                            }
+                        }
+                    />
                 </div>
-              }
-            }
-          />
-        </div>
-      </div>
-
-    </article>
-        }
+            </div>
+        </article>
+    }
 }
 
 use gloo_net::http::Request;
