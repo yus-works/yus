@@ -115,7 +115,7 @@ fn LangsLine(dto: ProjectDto) -> impl IntoView {
 }
 
 #[component]
-pub fn ProjectCard(
+fn ProjectCard(
     dto: ProjectDto,
     image: String,
     #[prop(optional)] extra: Option<&'static str>,
