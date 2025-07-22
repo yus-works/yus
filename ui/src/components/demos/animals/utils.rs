@@ -14,7 +14,7 @@ use crate::{
     }, render::renderer::{
         camera_input::CameraInput,
         gpu::{
-            gpu_state::{create_idx_buff_init, create_vert_buff_init, FrameCtx, Projection}, surface_context::SurfaceContext, vertex_ctx::VertexCtx, GpuState
+            gpu_state::{create_idx_buff_init, create_vert_buff_init, FrameCtx, Projection}, vertex_ctx::VertexCtx, GpuState
         },
         instance::InstanceRaw,
         vertex::Vertex,
