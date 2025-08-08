@@ -1,20 +1,20 @@
 // ui/src/routes.rs
+use leptos::IntoView;
+use leptos::component;
+use leptos::prelude::ElementChild;
+use leptos::view;
 use leptos_router::components::Route;
 use leptos_router::components::Routes;
 use leptos_router::path;
-use leptos::prelude::ElementChild;
-use leptos::view;
-use leptos::IntoView;
-use leptos::component;
 
 use crate::components::{
-  demos_menu::DemosMenu,
-  // demos::cube::CubeDemo,
+    demos_menu::DemosMenu,
+    // demos::cube::CubeDemo,
 };
 
 use crate::pages::{
-  classic::classic::ClassicMain,
-  home::Home,
+    classic::classic::AboutSection, classic::classic::ClassicMain,
+    classic::classic::ContactSection, home::Home,
 };
 
 #[component]
@@ -26,6 +26,8 @@ pub fn RoutesMenu() -> impl IntoView {
         // <Route path=path!("/demos/mandelbrot") view=Mandelbrot/>
         // <Route path=path!("/demos/cube")     view=CubeDemo        />
         <Route path=path!("/classic")     view=ClassicMain        />
+        <Route path=path!("/contact")     view=ContactSection     />
+        <Route path=path!("/about")     view=AboutSection     />
       </Routes>
     }
 }

@@ -1,4 +1,6 @@
 use gloo_timers::callback::Timeout;
+use leptos::IntoView;
+use leptos::component;
 use leptos::html;
 use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::AriaAttributes;
@@ -14,10 +16,9 @@ use leptos::prelude::RwSignal;
 use leptos::prelude::StyleAttribute;
 use leptos::prelude::Suspense;
 use leptos::prelude::Update;
-use leptos::prelude::view;
 use leptos::prelude::{Children, Effect, Get, Set};
 use leptos::server::LocalResource;
-use leptos::{IntoView, component};
+use leptos::view;
 use std::collections::HashMap;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
@@ -27,6 +28,169 @@ use web_sys::Event;
 
 use crate::components::demo::{Demo, DemoTab};
 use crate::components::shader_editor::ShaderEditor;
+
+#[component]
+pub fn AboutSection() -> impl IntoView {
+    view! {
+        <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="rounded-xl border border-neutral-700/60 p-6 bg-neutral-900/30">
+                <h3 class="text-xl font-semibold text-text mb-2">About me</h3>
+                <p class="text-text/90 leading-relaxed">
+                    "I'm Teodor. I build backend-heavy, low-bloat systems in "
+                    <strong>Go</strong>
+                    " and "
+                    <strong>Rust</strong>
+                    ", ship them end-to-end, and keep them neat and fast." <br/><br/> "I live in Serbia, run "
+                    <strong>NixOS</strong>
+                    ", and care a lot about high-leverage changes; the 20% that delivers 80% of the payoff. "
+                    <br/><br/>
+                    "Even as someone who’s usually lazy about changing workflows, I’ll happily push through the slog if it means a permanent win. 
+                    That’s how I ended up knee-deep in NixOS configs and a heavily tuned Neovim."
+                </p>
+
+                <div class="text-text/80 mt-4">
+                    <p>
+                        "Currently active on: job-watcher (Go + HTMX job aggregator)"
+                    </p>
+
+                    <ul class="text-text/80 list-disc list-inside space-y-1">
+                        <li>
+                            "Live: "
+                            <a 
+                                href="https://jobs.yus.rs" 
+                                class="underline hover:text-accent font-mono"
+                            >
+                                "https://jobs.yus.rs"
+                            </a>
+                        </li>
+                        <li>
+                            "Repo: "
+                            <a 
+                                href="https://github.com/yus-works/job-watcher" 
+                                class="underline hover:text-accent font-mono"
+                            >
+                                "https://github.com/yus-works/job-watcher"
+                            </a>
+                        </li>
+                    </ul>
+
+                    <p class="mt-4">
+                        "I’m also contributing to "
+                        <a 
+                            href="https://github.com/tessera-ui/tessera" 
+                            target="_blank" 
+                            rel="noopener" 
+                            class="underline hover:text-accent font-mono"
+                        >
+                            "https://github.com/tessera-ui/tessera"
+                        </a>
+                        ", an immediate-mode UI framework in Rust."
+                    </p>
+                </div>
+            </div>
+            <div class="rounded-xl border border-neutral-700/60 p-6 bg-neutral-900/30">
+                <h3 class="text-xl font-semibold text-text mb-2">About the website</h3>
+                <p class="text-text/90 leading-relaxed">
+                    "This site is built with "
+                    <strong>Leptos</strong>
+                    " + "
+                    <strong>Actix</strong>
+                    " + "
+                    <strong>Tailwind</strong>
+                    ". The shader demos run on "
+                    <strong>WebGPU/WebGL2</strong>
+                    " ("
+                    <strong>WGPU</strong>
+                    ") and the shader pipelines are hot-swapped by the editor on change."
+                </p>
+                <ul class="mt-4 list-disc list-inside text-text/85 space-y-1">
+                    <li>"Currently only CSR (working on hydration for better performance)"</li>
+                    <li>"Minimal JS beyond what Leptos generates"</li>
+                    <li>"No trackers, no analytics, no cookies"</li>
+                    <li>"Local fonts and optimized static assets"</li>
+                    <li>"Deployed on "<a href="https://fly.io">"Fly.io"</a></li>
+                </ul>
+                <p class="text-text/80 text-sm mt-4">
+                    "If something feels slow or broken, please ping me; performance budgets are a feature, not a wish."
+                </p>
+            </div>
+        </div>
+    }
+}
+
+#[component]
+pub fn ContactSection() -> impl IntoView {
+    view! {
+        <section id="contact" class="mx-auto max-w-md space-y-4 py-16 border-t border-neutral-700/40">
+            <h2 class="text-3xl text-text font-bold mb-3">Contact</h2>
+            <p class="text-text/90 mb-6">
+                "Want to work together or chat? Pick whatever’s easiest:"
+            </p>
+
+            <div>
+                <a
+                    href="mailto:teodor@yus.rs"
+                    class="mb-4 group rounded-xl border border-neutral-700/70 hover:border-primary/70 p-4 flex items-center justify-between transition"
+                    aria-label="Email Teodor"
+                >
+                    <div>
+                        <h3 class="font-semibold text-text">Email</h3>
+                        <p class="text-sm text-text/80">"teodor@yus.rs"</p>
+                    </div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="40"
+                      height="40"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" />
+                      <path d="M3 7l9 6l9 -6" />
+                    </svg>
+                </a>
+
+                <a
+                    href="https://github.com/teodord25"
+                    target="_blank" rel="noopener"
+                    class="text-text text-lg mb-4 group rounded-xl border border-neutral-700/70 hover:border-primary/70 p-4 flex items-center justify-between transition"
+                    aria-label="GitHub profile"
+                >
+                    <div>
+                        <h3 class="font-semibold">GitHub</h3>
+                        <p class="text-sm text-text/80">"teodord25"</p>
+                    </div>
+                    <i style="font-size: 2.5rem" class="devicon-github-original"></i>
+                </a>
+
+                <a
+                    href="https://www.linkedin.com/in/teodord25"
+                    target="_blank" rel="noopener"
+                    class="text-text text-lg mb-4 group rounded-xl border border-neutral-700/70 hover:border-primary/70 p-4 flex items-center justify-between transition"
+                    aria-label="LinkedIn profile"
+                >
+                    <div>
+                        <h3 class="font-semibold">LinkedIn</h3>
+                        <p class="text-sm text-text/80">"Teodor Đurić"</p>
+                    </div>
+                    <i style="font-size: 2.5rem" class="devicon-linkedin-plain"></i>
+                </a>
+            </div>
+
+            <div class="mt-8">
+                <a
+                    class="inline-block bg-primary text-neutral-dark px-6 py-3 rounded-full hover:bg-primary/90 transition"
+                    href="mailto:teodor@yus.rs"
+                >
+                    "Email me"
+                </a>
+            </div>
+        </section>
+    }
+}
 
 #[component]
 fn Hero() -> impl IntoView {
@@ -79,17 +243,21 @@ fn LangsLine(dto: ProjectDto) -> impl IntoView {
     let style = move |seg: LangDto| {
         format!(
             "flex:{:.3} 0 0;background:{};",
-            seg.pct, seg.color.as_deref().unwrap_or("#666")
+            seg.pct,
+            seg.color.as_deref().unwrap_or("#666")
         )
     };
 
-    let icon = move |seg: LangDto, show_icon: bool| {
-        if show_icon {
-            seg.icon.as_ref().map(|ic| view!{
+    let icon =
+        move |seg: LangDto, show_icon: bool| {
+            if show_icon {
+                seg.icon.as_ref().map(|ic| view!{
                 <i class=format!("devicon-{} text-white text-[1.25rem] leading-none", ic)></i>
             })
-        } else { None }
-    };
+            } else {
+                None
+            }
+        };
 
     let children = move |seg: LangDto| {
         let s = seg.clone();
