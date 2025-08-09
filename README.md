@@ -1,4 +1,4 @@
-# Yus.rs – Full-Stack Rust Web Application for Performance and Reliability
+# Yus.rs - Full-Stack Rust Web Application for Performance and Reliability
 
 **Yus.rs** is a personal full-stack web application built entirely in Rust, showcasing systems-level engineering applied to modern web development. It serves as both an interactive portfolio website and a technology demo that highlights the creator’s proficiency in backend and systems programming. Yus.rs delivers a fast and safe user experience by combining a WebAssembly front-end with a high-performance Rust backend, demonstrating how Rust’s performance and reliability can elevate web architecture.
 
@@ -44,7 +44,7 @@ On a higher level, the project reflects an engineering philosophy of *building t
 
 Moreover, Yus.rs underscores maintainability and longevity. Using Rust means the project will compile and run years from now as reliably as today, and the codebase remains understandable and clean due to Rust’s emphasis on clarity and explicitness. The project’s structure, documentation, and code quality mirror what you’d expect in a collaborative professional environment, indicating that the author writes code ready for production and team contexts.
 
-## Conclusion – A Passion for Excellence in Systems Engineering
+## Conclusion - A Passion for Excellence in Systems Engineering
 
 Yus.rs is more than just a personal website; it’s a statement about the developer’s passion for systems-level thinking applied to real-world applications. Every layer of this project, from the GPU acceleration in the browser, to the asynchronous web server, down to the automated deployment , was built with a focus on **quality, performance, and reliability**. This aligns directly with what forward-thinking engineering teams seek in backend and systems roles.
 
