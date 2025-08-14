@@ -28,7 +28,7 @@ async fn main() -> std::io::Result<()> {
 
         println!("\x1b[1;95m{BANNER}\x1b[0m");
         println!(
-            "\x1b[1;34m🚀  OK EPIC SERVER GOING AT http://0.0.0.0:{port}  OH YEAH!\x1b[0m\n"
+            "\x1b[1;34m OK EPIC SERVER GOING AT http://0.0.0.0:{port} OH YEAH!\x1b[0m\n"
         );
     }
 
