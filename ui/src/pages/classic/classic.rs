@@ -305,6 +305,12 @@ fn ProjectCard(
                 <LangsTooltip dto=dto.clone() />
                 <LangsLine dto=dto.clone() />
             </div>
+
+            <a href=dto.repo_url.clone()
+                target="_blank" rel="noopener"
+                class="absolute inset-0"
+                aria-label=format!("Open {} repository", dto.name)
+            />
         </article>
     }
 }
@@ -327,6 +333,8 @@ struct ProjectDto {
     status: String,
     labels: Vec<String>,     // from repo topics
     languages: Vec<LangDto>, // (lang, pct)
+
+    repo_url: String,
 }
 
 #[component]

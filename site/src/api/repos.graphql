@@ -33,6 +33,10 @@ query Portfolio($login: String!) {
 # ─────────────── reusable fragment ───────────────
 fragment RepoFields on Repository {
   name
+
+  url
+  # TODO: homepageUrl 
+
   description
   pushedAt                               # drives “live / wip …”
 

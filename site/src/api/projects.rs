@@ -24,6 +24,8 @@ struct ProjectDto {
     status: String,
     labels: Vec<String>, // from repo topics
     languages: Vec<LangDto>,
+
+    repo_url: String,
 }
 
 static CLIENT: OnceCell<Arc<Octocrab>> = OnceCell::new();
@@ -158,6 +160,11 @@ async fn projects() -> actix_web::Result<web::Json<Vec<ProjectDto>>> {
                     .collect()
             };
 
+            let repo_url = repo.get("url")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_owned();
+
             Some(ProjectDto {
                 name,
                 description,
@@ -165,6 +172,8 @@ async fn projects() -> actix_web::Result<web::Json<Vec<ProjectDto>>> {
                 status,
                 labels,
                 languages,
+
+                repo_url,
             })
         })
         .collect();
