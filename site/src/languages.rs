@@ -30,6 +30,7 @@ pub static LANG_TABLE: Lazy<HashMap<String, LangMeta>> = Lazy::new(|| {
         ("C", "c-plain"),
         ("C++", "cplusplus-plain"),
         ("GLSL", "opengl-plain"),
+        ("Lua", "lua-plain"),
     ];
 
     let devicon_map: HashMap<&str, &str> = DEVICON.iter().cloned().collect();
