@@ -301,7 +301,7 @@ fn ProjectCard(
                     { move || extra.map(|e| view! { <br/> <span>{ e }</span> } ) }
                 </p>
             </div>
-            <div class="group relative w-full mt-3 mt-auto">
+            <div class="z-50 group relative w-full mt-3 mt-auto">
                 <LangsTooltip dto=dto.clone() />
                 <LangsLine dto=dto.clone() />
             </div>
