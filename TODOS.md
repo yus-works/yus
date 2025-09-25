@@ -1,3 +1,2 @@
 - TODO: add little "fiddle with this bit to make something fun happen" indicators
 - TODO: Look into full leptos with ssr
-- TODO: make Projects, About, Contact sections actually do something

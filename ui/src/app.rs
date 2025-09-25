@@ -16,7 +16,7 @@ pub fn App() -> impl IntoView {
           <div class="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
             <a href="/" class="text-2xl font-extrabold text-primary">YUS</a>
             <nav class="hidden md:flex gap-8 text-text">
-              <a href="/projects">Projects</a>
+              <a href="#projects">Projects</a>
               <a href="/about">About</a>
               <a href="/contact">Contact</a>
             </nav>
