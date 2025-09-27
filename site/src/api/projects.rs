@@ -83,6 +83,13 @@ async fn projects() -> actix_web::Result<web::Json<Vec<ProjectDto>>> {
     // 4. build the DTOs
     let out: Vec<ProjectDto> = repos
         .iter()
+        .filter(|repo| {
+            // skip .github repo
+            repo.get("name")
+                .and_then(|v| v.as_str())
+                .map(|name| name != ".github")
+                .unwrap_or(false)
+        })
         .filter_map(|repo| {
             // name is the only field we require
             let name = repo.get("name")?.as_str()?.to_owned();
