@@ -63,7 +63,7 @@ pub fn AboutSection() -> impl IntoView {
                     <strong>WGPU</strong>
                     ") and the shader pipelines are hot-swapped by the editor on change."
                 </p>
-                <ul class="mt-4 list-disc list-inside text-text/85 space-y-1">
+                <ul class="mt-4 list-disc list-inside text-text space-y-1">
                     <li>"Currently only CSR (working on hydration for better performance)"</li>
                     <li>"Minimal JS beyond what Leptos generates"</li>
                     <li>"No trackers, no analytics, no cookies"</li>
