@@ -47,46 +47,6 @@ pub fn AboutSection() -> impl IntoView {
                     "Even as someone who’s usually lazy about changing workflows, I’ll happily push through the slog if it means a permanent win. 
                     That’s how I ended up knee-deep in NixOS configs and a heavily tuned Neovim."
                 </p>
-
-                <div class="text-text/80 mt-4">
-                    <p>
-                        "Currently active on: job-watcher (Go + HTMX job aggregator)"
-                    </p>
-
-                    <ul class="text-text/80 list-disc list-inside space-y-1">
-                        <li>
-                            "Live: "
-                            <a 
-                                href="https://jobs.yus.rs" 
-                                class="underline hover:text-accent font-mono"
-                            >
-                                "https://jobs.yus.rs"
-                            </a>
-                        </li>
-                        <li>
-                            "Repo: "
-                            <a 
-                                href="https://github.com/yus-works/job-watcher" 
-                                class="underline hover:text-accent font-mono"
-                            >
-                                "https://github.com/yus-works/job-watcher"
-                            </a>
-                        </li>
-                    </ul>
-
-                    <p class="mt-4">
-                        "I’m also contributing to "
-                        <a 
-                            href="https://github.com/tessera-ui/tessera" 
-                            target="_blank" 
-                            rel="noopener" 
-                            class="underline hover:text-accent font-mono"
-                        >
-                            "https://github.com/tessera-ui/tessera"
-                        </a>
-                        ", an immediate-mode UI framework in Rust."
-                    </p>
-                </div>
             </div>
             <div class="rounded-xl border border-neutral-700/60 p-6 bg-neutral-900/30">
                 <h3 class="text-xl font-semibold text-text mb-2">About the website</h3>
